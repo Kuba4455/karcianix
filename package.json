@@ -1,0 +1,23 @@
+{
+  "name": "karcianix",
+  "version": "0.4.0",
+  "private": true,
+  "type": "module",
+  "description": "Deterministyczny symulator balansu talii Galów",
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "simulate": "node src/cli.ts simulate",
+    "experiment": "node src/cli.ts experiment",
+    "replay": "node src/cli.ts replay"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "5.9.3",
+    "vitest": "5.0.1"
+  }
+}
