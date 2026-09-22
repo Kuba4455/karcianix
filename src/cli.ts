@@ -12,7 +12,7 @@ import type { BotKind, CardId, CardPatch, Catalog, GameOptions, Rules } from './
 const help = `Karcianix — symulacje i eksperymenty
 
 npm run simulate -- --games 1000 --seed 42
-npm run experiment -- --games 10000 --seed 42 --card obelix --field cost --value 5
+npm run experiment -- --games 10000 --seed 42 --card obelix --field cost --value 6
 npm run experiment -- --games 10000 --card ahigienix --field abilityEnabled --value false
 npm run replay -- --seed 42
 npm run replay -- --from reports/experiment-obelix-42.json --index 0
@@ -106,7 +106,7 @@ export async function main(args = process.argv.slice(2)): Promise<void> {
     if (!CARD_IDS.includes(card)) throw new Error(`Nieznana karta: ${card}`);
     const field = values.field ?? 'cost';
     if (!['cost', 'attack', 'health', 'abilityEnabled'].includes(field)) throw new Error('Nieznany parametr karty');
-    const raw = values.value ?? (field === 'cost' && card === 'obelix' ? '5' : undefined);
+    const raw = values.value ?? (field === 'cost' && card === 'obelix' ? '6' : undefined);
     if (raw === undefined) throw new Error('Podaj --value');
     if (field === 'abilityEnabled' && raw !== 'true' && raw !== 'false') throw new Error('abilityEnabled wymaga true lub false');
     const patch: CardPatch = { [field]: field === 'abilityEnabled' ? raw === 'true' : integer(raw, field) };

@@ -1,6 +1,18 @@
 import { combatBonus, other, playerTarget, stats } from './engine.ts';
 import type { Rng } from './rng.ts';
-import type { Action, BotKind, CardDefinition, Permanent, PlayerObservation } from './types.ts';
+import type { Action, BotKind, CardDefinition, Outcome, Permanent, PlayerObservation } from './types.ts';
+
+export interface ActionPreviewResult {
+  observation: PlayerObservation;
+  actions: readonly Action[];
+  outcome: Outcome | null;
+  sameTurn: boolean;
+}
+/** Simulates only the supplied public action sequence and returns another sanitized observation. */
+export type ActionPreview = (sequence: readonly Action[]) => ActionPreviewResult;
+
+const LOOKAHEAD_WIDTH = 6;
+const FOLLOW_UP_WEIGHT = 0.6;
 
 function value(def: CardDefinition, attack = def.attack, health = def.health, control = false): number {
   return attack * (control ? 1.15 : 1.5) + health * (control ? 1.05 : 0.7) + 0.8;
@@ -121,15 +133,43 @@ function score(o: PlayerObservation, action: Action, control: boolean): number {
     }
   }
 }
-export function chooseAction(kind: BotKind, observation: PlayerObservation, actions: readonly Action[], rng: Rng): Action {
+export function chooseAction(kind: BotKind, observation: PlayerObservation, actions: readonly Action[], rng: Rng,
+  preview?: ActionPreview): Action {
   if (!actions.length) throw new Error('Bot nie ma legalnych akcji');
   if (kind === 'random') return actions[rng.int(actions.length)];
   if (kind !== 'aggressive' && kind !== 'control') throw new Error(`Nieznany bot: ${kind}`);
-  let best = actions[0];
-  let bestScore = -Infinity;
-  for (const action of actions) {
-    const candidate = score(observation, action, kind === 'control') + (action.type === 'endTurn' ? 0 : rng.next() * 0.01);
-    if (candidate > bestScore) { best = action; bestScore = candidate; }
+  const control = kind === 'control';
+  const ranked = actions.map(action => ({ action, immediate: score(observation, action, control), planned: 0 }));
+  for (const candidate of ranked) candidate.planned = candidate.immediate;
+  if (preview) {
+    const candidates = [...ranked]
+      .filter(x => x.action.type !== 'endTurn')
+      .sort((a, b) => b.immediate - a.immediate)
+      .slice(0, LOOKAHEAD_WIDTH);
+    for (const candidate of candidates) {
+      const next = preview([candidate.action]);
+      if (next.outcome?.kind === 'win' && next.outcome.winner === observation.player) {
+        candidate.planned = 100000;
+        continue;
+      }
+      if (!next.sameTurn) continue;
+      const followUps = next.actions.filter(action => action.type !== 'endTurn');
+      if (followUps.length) {
+        const bestFollowUp = Math.max(...followUps.map(action => score(next.observation, action, control)));
+        const baselineFollowUp = Math.max(0, ...ranked
+          .filter(other => other !== candidate && other.action.type !== 'endTurn')
+          .map(other => other.immediate));
+        // Reward only the improvement created by the setup action. Merely preserving
+        // an already-good move is not a combo and must not be counted twice.
+        candidate.planned += FOLLOW_UP_WEIGHT * (bestFollowUp - baselineFollowUp);
+      }
+    }
   }
-  return best;
+  let best = ranked[0];
+  let bestScore = -Infinity;
+  for (const candidate of ranked) {
+    const tieBreak = candidate.action.type === 'endTurn' ? 0 : rng.next() * 0.01;
+    if (candidate.planned + tieBreak > bestScore) { best = candidate; bestScore = candidate.planned + tieBreak; }
+  }
+  return best.action;
 }

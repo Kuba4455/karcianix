@@ -1,11 +1,11 @@
-# Zasady silnika — galowie-v5
+# Zasady silnika — galowie-v6
 
 ## Ustalenia autora gry
 
 - Obaj gracze zaczynają z 12 HP i sześcioma kartami.
 - Każdy ma osobną talię 60 kart: 20 rodzajów × trzy kopie.
 - W pierwszej rundzie rozpoczynający nie dobiera, a drugi gracz dobiera jedną kartę na początku swojej pierwszej tury. Od drugiej własnej tury obaj dobierają po jednej karcie.
-- Gęsi mają 1 ataku, 1 życia i kosztują 1 energię.
+- Gęsi mają 1 ataku, 2 życia i kosztują 1 energię.
 - Raz we własnej turze można dobrowolnie przepalić jedną kartę z ręki na energię.
   Energia odnawia się na początku własnej tury, maksymalnie 10.
 - W pierwszej własnej turze żaden gracz nie może deklarować ataków: ani na gracza, ani na jego jednostki lub budowle. Może tworzyć energię i zagrywać karty.
@@ -49,7 +49,7 @@ ustalenia autora. Ich zmiana może znacząco zmienić wyniki balansu.
 | ID | Nazwa | Atak / HP | Koszt | Zachowanie |
 |---|---|---:|---:|---|
 | `asterix` | Asterix | 3 / 3 | 4 | Jedna akcja ataku wykonuje do dwóch wymian z tą samą kartą. Pierwsze obrażenia zwrotne ignorowane. Druga wymiana tylko jeśli obie karty żyją. Bez przenoszenia drugiego uderzenia. Atak gracza tylko raz |
-| `obelix` | Obelix | 5 / 5 | 4 | Bez dodatkowej zdolności |
+| `obelix` | Obelix | 5 / 5 | 5 | Bez dodatkowej zdolności |
 | `panoramix` | Panoramix | 1 / 3 | 3 | Przy wejściu wybiera swoją jednostkę, która już leży na stole, i daje jej wyłącznie +0/+2. Ten konkretny Panoramix nie jest legalnym celem ataku, dopóki żyją wybrana jednostka i jej premia. Bez innej jednostki wchodzi bez premii i ochrony |
 | `falballa` | Falballa | 2 / 2 | 2 | Atakując mężczyznę dostaje +2 ataku; atakowana przez mężczyznę korzysta z dodatkowej puli 2 HP |
 | `dobromina` | Dobromina | 1 / 3 | 2 | Jak Falballa, lecz przeciw wrogiemu Asparanoixowi obie premie wynoszą 4 zamiast 2 |
@@ -57,8 +57,8 @@ ustalenia autora. Ich zmiana może znacząco zmienić wyniki balansu.
 | `ahigienix` | Ahigienix | 1 / 4 | 3 | Na początku tury rywala, przed dobieraniem, zadaje 1 obrażenie każdej jego jednostce. Tylko gdy źródło żyje. Kilka źródeł sumuje się; opcja `poisonStacks: false` ogranicza do jednego |
 | `automatix` | Automatix | 1 / 5 | 3 | Bez dodatkowej zdolności |
 | `geriatrix` | Geriatrix | 3 / 1 | 1 | Ginie po własnym ataku jednostki lub gracza. Nie ginie automatycznie na koniec tury. Samo bronienie się nie uruchamia tej zdolności |
-| `kakofonix` | Kakofonix | 3 / 1 | 3 | Jednorazowo przy wejściu blokuje obecne jednostki przeciwnika do początku następnej własnej tury |
-| `miecz` | Miecz | — | 1 | Stałe +2 ataku wybranej własnej jednostki |
+| `kakofonix` | Kakofonix | 2 / 1 | 3 | Jednorazowo przy wejściu blokuje obecne jednostki przeciwnika do początku następnej własnej tury |
+| `miecz` | Miecz | — | 2 | Stałe +2 ataku wybranej własnej jednostki |
 | `tarcza` | Tarcza | — | 1 | Stałe +1 maksymalnego HP wybranej własnej jednostki |
 | `magiczny_napoj` | Magiczny napój | — | 2 | +3/+3 wybranej własnej jednostce do końca bieżącej tury właściciela. Potem usuwa tę premię i nakłada stałe -1/-1. Każdy napój daje osobny kac |
 | `kociolek` | Kociołek | 0 / 3 | 4 | Aura +1/+1 wszystkim własnym jednostkom, w tym później zagranym. Nie obejmuje budowli. Kilka kociołków sumuje się. Aura znika po zniszczeniu źródła |
@@ -66,8 +66,8 @@ ustalenia autora. Ich zmiana może znacząco zmienić wyniki balansu.
 | `dzik` | Dzik | 2 / 1 | 1 | Zwykła jednostka, bez męskiej płci dla premii bojowych |
 | `pieczony_dzik` | Pieczony dzik | — | 1 | Leczy o maksymalnie 2 własnego gracza albo własną jednostkę, do jej maksimum. Bez brakujących HP nie można go zagrać |
 | `sierp` | Sierp | — | 1 | Stałe +1 ataku wybranej własnej jednostki |
-| `spadajace_niebo` | Spadające niebo | — | 2 | Blokada obecnych wrogich jednostek jak u Kakofonixa oraz usunięcie dodatnich modyfikatorów z obu pól. Wyłącza aury obecnych kociołków. Nowo zagrany kociołek działa normalnie |
-| `gesi` | Gęsi | 1 / 1 | 1 | Zwykła jednostka bez zdolności; od drugiej własnej tury może atakować od razu po zagraniu |
+| `spadajace_niebo` | Spadające niebo | — | 3 | Blokada obecnych wrogich jednostek jak u Kakofonixa oraz usunięcie dodatnich modyfikatorów z obu pól. Wyłącza aury obecnych kociołków. Nowo zagrany kociołek działa normalnie |
+| `gesi` | Gęsi | 1 / 2 | 1 | Zwykła jednostka bez zdolności; od drugiej własnej tury może atakować od razu po zagraniu |
 
 ## Falballa i Dobromina — pasywna premia kierunkowa
 
@@ -124,3 +124,5 @@ Wersja 0.2.0: `secondPlayerFirstDraw: 1` określa dodatkowe dobieranie drugiego 
 Wersja 0.3.0: `startingHp: 15` ustala początkowe i maksymalne HP gracza. `allowFirstTurnAttacks: false` blokuje deklaracje ataków podczas pierwszej własnej tury każdego gracza. Od drugiej tury blokada znika. Nie wyłącza zdolności pasywnych ani normalnych obrażeń zwrotnych, gdy ataki są już możliwe.
 
 Wersja 0.5.0: domyślne zasady to `startingHp: 12`, `openingHand: 6`, `drawPerTurn: 1`, `secondPlayerFirstDraw: 1`, `allowFirstTurnAttacks: false`, `maxEnergy: 10` i `stunRetaliation: true`. Falballa i Dobromina używają automatycznej premii kierunkowej zamiast postaw.
+
+Wersja 0.6.0: Gęsi mają 1/2 za 1, Miecz kosztuje 2, Obelix kosztuje 5, Kakofonix ma 2/1 za 3, a Spadające niebo kosztuje 3. Boty agresywny i kontrolny oceniają również najlepszy kolejny ruch w tej samej turze.

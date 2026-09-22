@@ -8,10 +8,11 @@ każdej z 20 kart Galów. Bez interfejsu graficznego i bez zależności produkcy
 założeń potrzebnych do uruchomienia symulacji. Szczególnie istotna jest robocza
 interpretacja warunkowego życia Falballi/Dobrominy, blokad i Spadającego nieba.
 
-## Aktualne zasady — wersja 0.5.0
+## Aktualne zasady — wersja 0.6.0
 
 - Obaj gracze zaczynają z **12 HP**, leczenie gracza nie przekracza 12 HP.
-- Spadające niebo kosztuje **2 energii**.
+- Spadające niebo kosztuje **3 energii**.
+- Gęsi mają **1/2 za 1**, Miecz kosztuje **2**, Obelix kosztuje **5**, a Kakofonix ma **2/1 za 3**.
 - W pierwszej własnej turze obu graczy nie można deklarować żadnego ataku. Można tworzyć energię i zagrywać karty. Od drugiej własnej tury jednostki, także nowo zagrane, mogą normalnie atakować.
 - Zablokowana jednostka nie oddaje obrażeń do chwili odblokowania.
 - Panoramix daje wybranej jednostce już leżącej na stole wyłącznie +0/+2 i pozostaje chroniony przed atakami, dopóki żyją ta jednostka oraz jej premia.
@@ -20,7 +21,6 @@ interpretacja warunkowego życia Falballi/Dobrominy, blokad i Spadającego nieba
 ### Zachowane zmiany z wersji 0.2.0
 
 - Drugi gracz dobiera 1 kartę na początku pierwszej własnej tury. Rozpoczynający nie dobiera wtedy kart. Od drugiej własnej tury obaj dobierają po 1.
-- Gęsi: **1 ataku / 1 życia / 1 energii**.
 - Ostatnia seria 500 gier dotyczy wcześniejszych zasad 0.2.0: [RESULTS-v0.2.0.md](RESULTS-v0.2.0.md). Raporty historyczne wymagają do replayu zgodnej wersji silnika; nie są wynikami obecnych zasad. Status bieżącej wersji: [RESULTS.md](RESULTS.md).
 
 ## Szybki start
@@ -36,7 +36,7 @@ npm run simulate -- --games 1000 --seed 42
 npm run experiment -- --games 10000 --seed 42
 ```
 
-Ostatnie polecenie porównuje **Obelixa 5/5 za 4** z **Obelixem 5/5 za 5**.
+Ostatnie polecenie porównuje **Obelixa 5/5 za 5** z **Obelixem 5/5 za 6**.
 `--games 10000` oznacza dokładnie 10 000 partii, czyli 5 000 par, a nie 10 000 par.
 Zależności są przypięte w `package-lock.json`; używaj `npm ci`.
 
@@ -49,7 +49,8 @@ wykonuje osobno `npm run typecheck`. Dokumentacja:
 
 - Wszystkie 20 kart i ich zdolności, 12 HP, 6 kart początkowych, dobieranie,
   odnawialna energia, legalne ruchy i jednoczesne obrażenia.
-- Bot losowy, agresywny i kontrolny. Dwa ostatnie są prostymi heurystykami.
+- Bot losowy, agresywny i kontrolny. Dwa ostatnie łączą heurystyki z podglądem
+  najlepszego następnego ruchu w tej samej turze, dzięki czemu rozpoznają krótkie combo.
 - Osobne, deterministyczne strumienie RNG do obu talii i decyzji obu botów.
 - Boty dostają kopię własnej ręki i publicznych informacji. Nie dostają ręki
   przeciwnika, kolejności talii, seeda ani historii ukrytych zdarzeń.
@@ -89,7 +90,7 @@ liczba startów obu miejsc różni się najwyżej o 1.
 
 ```bash
 # Wyższy koszt Obelixa
-npm run experiment -- --games 10000 --seed 42 --card obelix --field cost --value 5
+npm run experiment -- --games 10000 --seed 42 --card obelix --field cost --value 6
 
 # Niższy atak Obelixa
 npm run experiment -- --games 10000 --seed 42 --card obelix --field attack --value 4
@@ -104,7 +105,7 @@ npm run experiment -- --games 10000 --seed 99 --card kakofonix --field cost --va
 npm run experiment -- --games 10000 --seed 2027 --bots control,control
 
 # Kontrola metody: identyczne warianty powinny dać 50% w każdej pełnej parze
-npm run experiment -- --games 100 --seed 42 --card obelix --field cost --value 4
+npm run experiment -- --games 100 --seed 42 --card obelix --field cost --value 5
 ```
 
 Wariant nadpisuje wszystkie trzy kopie jednej karty **tylko w jednej talii**.
@@ -149,7 +150,7 @@ Polecenia tworzą w `reports/` trzy pliki:
 
 Domyślne nazwy zawierają tryb, kartę i seed. Powtórzenie polecenia z tą samą
 nazwą nadpisuje raport; do zachowania kilku zmian tej samej karty używaj
-osobnych katalogów `--out reports/obelix-cost5` i `--out reports/obelix-attack4`.
+osobnych katalogów `--out reports/obelix-cost6` i `--out reports/obelix-attack4`.
 
 ```bash
 # Indeks 0 oznacza pierwszą grę zapisaną w raporcie

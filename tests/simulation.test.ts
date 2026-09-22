@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'vitest';
 import { createCatalog } from '../src/cards.ts';
-import { applyAction, createGame, getLegalActions, observe } from '../src/engine.ts';
+import { applyAction, createGame, getLegalActions, makePermanent, observe } from '../src/engine.ts';
 import { pairedInterval, runExperiment, summarizePairs } from '../src/experiments.ts';
 import { chooseAction } from '../src/bots.ts';
 import { deriveSeed, Rng } from '../src/rng.ts';
-import { runGame, runSimulation, scoreFor } from '../src/simulate.ts';
+import { createActionPreview, runGame, runSimulation, scoreFor } from '../src/simulate.ts';
 import { main } from '../src/cli.ts';
 import type { BotKind } from '../src/types.ts';
 
@@ -26,6 +26,44 @@ describe('Reprodukowalność i izolacja', () => {
       applyAction(s, action);
     }
   });
+  test('bot z podglądem jednego ruchu zachowuje Miecz i planuje wzmocnienie przed atakiem', () => {
+    const s = createGame({ seed: 7 });
+    s.turn = 3;
+    s.currentPlayer = 0;
+    s.players[0].turnsTaken = 2;
+    s.players[1].turnsTaken = 1;
+    for (const p of s.players) {
+      p.deck.push(...p.hand);
+      p.hand = [];
+      p.board = [];
+      p.maxEnergy = p.energy = 2;
+    }
+    const take = (owner: 0 | 1, id: 'gesi' | 'asterix' | 'miecz') => {
+      const p = s.players[owner];
+      const index = p.deck.findIndex(card => card.cardId === id);
+      return p.deck.splice(index, 1)[0];
+    };
+    const geese = makePermanent(take(0, 'gesi'));
+    s.players[0].board.push(geese);
+    s.players[1].board.push(makePermanent(take(1, 'asterix')));
+    const sword = take(0, 'miecz');
+    s.players[0].hand.push(sword);
+    const observation = observe(s);
+    const legal = getLegalActions(s);
+    const greedy = chooseAction('control', observation, legal, new Rng(1));
+    const planned = chooseAction('control', observation, legal, new Rng(1), createActionPreview(s, 0));
+    expect(greedy).toEqual({ type: 'createEnergy', cardUid: sword.uid });
+    expect(planned).toEqual({ type: 'playCard', cardUid: sword.uid, targetUid: geese.uid });
+  });
+  test('planowanie nie zależy od ukrytej ręki ani kolejności talii przeciwnika', () => {
+    const first = createGame({ seed: 91 });
+    const second = structuredClone(first);
+    second.players[1].hand.reverse();
+    second.players[1].deck.reverse();
+    const choose = (s: typeof first) => chooseAction('control', observe(s), getLegalActions(s), new Rng(44),
+      createActionPreview(s, s.currentPlayer));
+    expect(choose(first)).toEqual(choose(second));
+  });
   test.each(['aggressive', 'control', 'random'] as const)('20 pełnych partii %s zachowuje karty, energię i żywe jednostki po każdej akcji', bot => {
     for (let seed = 0; seed < 20; seed++) {
       const result = runGame({ seed, bots: [bot, bot], verify: true });
@@ -41,7 +79,7 @@ describe('Reprodukowalność i izolacja', () => {
 
 describe('Eksperymenty i statystyki', () => {
   test('identyczny wariant daje dokładnie 50% w KAŻDEJ parze, również z różnymi botami', () => {
-    const result = runExperiment({ games: 24, seed: 42, card: 'obelix', patch: { cost: 4 } });
+    const result = runExperiment({ games: 24, seed: 42, card: 'obelix', patch: { cost: 5 } });
     expect(result.pairs).toHaveLength(12);
     expect(result.pairs.every(p => p.meanVariantScore === 0.5)).toBe(true);
     expect(result.comparison.variantScore).toBe(0.5);
@@ -51,11 +89,11 @@ describe('Eksperymenty i statystyki', () => {
   });
   test('wariant zmienia dokładnie jedną definicję, bez mutowania bazowej', () => {
     const original = createCatalog();
-    const variant = createCatalog({ obelix: { cost: 5 } });
-    expect(original.obelix.cost).toBe(4);
-    expect(variant.obelix.cost).toBe(5);
+    const variant = createCatalog({ obelix: { cost: 4 } });
+    expect(original.obelix.cost).toBe(5);
+    expect(variant.obelix.cost).toBe(4);
     expect(variant.asterix).toEqual(original.asterix);
-    expect(createCatalog().obelix.cost).toBe(4);
+    expect(createCatalog().obelix.cost).toBe(5);
   });
   test('przedział używa liczby par i nie jest zerowy przy zerowej wariancji', () => {
     const data = Array.from({ length: 100 }, () => 0.5);
