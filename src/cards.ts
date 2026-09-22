@@ -9,7 +9,7 @@ export const CARDS: readonly CardDefinition[] = [
   card('asterix', 'Asterix', 'unit', 3, 3, 4, 'Dwa uderzenia w tę samą kartę; ignoruje pierwsze obrażenia zwrotne.', 'male'),
   card('obelix', 'Obelix', 'unit', 5, 5, 4, '', 'male'),
   card('panoramix', 'Panoramix', 'unit', 1, 3, 3, 'Przy wejściu: +0/+2 innej swojej jednostce. Jest chroniony, dopóki żyje wzmocniona jednostka i działa premia.', 'male'),
-  card('falballa', 'Falballa', 'unit', 2, 2, 2, 'W walce z mężczyzną: +2 ataku albo osłona 2, według wybranej postawy.', 'female'),
+  card('falballa', 'Falballa', 'unit', 2, 2, 2, 'Atakując mężczyznę: +2 ataku. Atakowana przez mężczyznę: +2 warunkowego życia.', 'female'),
   card('dobromina', 'Dobromina', 'unit', 1, 3, 2, 'Jak Falballa; przeciw Asparanoixowi premia wynosi 4 zamiast 2.', 'female'),
   card('asparanoix', 'Asparanoix', 'unit', 2, 4, 3, 'Przy wejściu osłabia kartę rywala o -1/-1, -2/0 lub 0/-2, dopóki żyje.', 'male'),
   card('ahigienix', 'Ahigienix', 'unit', 1, 4, 3, 'Na początku tury rywala: 1 obrażenie każdej jego jednostce.', 'male'),

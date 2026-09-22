@@ -6,17 +6,18 @@ każdej z 20 kart Galów. Bez interfejsu graficznego i bez zależności produkcy
 
 **Zacznij od [RULES.md](RULES.md).** Zasady podane przez autora są oddzielone od
 założeń potrzebnych do uruchomienia symulacji. Szczególnie istotna jest robocza
-interpretacja obrony Falballi/Dobrominy, blokad i Spadającego nieba.
+interpretacja warunkowego życia Falballi/Dobrominy, blokad i Spadającego nieba.
 
-## Aktualne zasady — wersja 0.4.0
+## Aktualne zasady — wersja 0.5.0
 
-- Obaj gracze zaczynają z **15 HP**, leczenie gracza nie przekracza 15 HP.
+- Obaj gracze zaczynają z **12 HP**, leczenie gracza nie przekracza 12 HP.
 - Spadające niebo kosztuje **2 energii**.
 - W pierwszej własnej turze obu graczy nie można deklarować żadnego ataku. Można tworzyć energię i zagrywać karty. Od drugiej własnej tury jednostki, także nowo zagrane, mogą normalnie atakować.
+- Falballa i Dobromina automatycznie dostają premię ataku, gdy atakują mężczyznę, oraz zużywalną pulę dodatkowego HP, gdy są przez niego atakowane. Nie wymagają przełączania postawy.
 
 ### Zachowane zmiany z wersji 0.2.0
 
-- Drugi gracz dobiera 1 kartę na początku pierwszej własnej tury. Rozpoczynający nie dobiera wtedy kart. Od drugiej własnej tury obaj dobierają po 2.
+- Drugi gracz dobiera 1 kartę na początku pierwszej własnej tury. Rozpoczynający nie dobiera wtedy kart. Od drugiej własnej tury obaj dobierają po 1.
 - Gęsi: **1 ataku / 1 życia / 1 energii**.
 - Ostatnia seria 500 gier dotyczy wcześniejszych zasad 0.2.0: [RESULTS-v0.2.0.md](RESULTS-v0.2.0.md). Raporty historyczne wymagają do replayu zgodnej wersji silnika; nie są wynikami obecnych zasad. Status bieżącej wersji: [RESULTS.md](RESULTS.md).
 
@@ -44,7 +45,7 @@ wykonuje osobno `npm run typecheck`. Dokumentacja:
 
 ## Co jest gotowe
 
-- Wszystkie 20 kart i ich zdolności, 15 HP, 6 kart początkowych, dobieranie,
+- Wszystkie 20 kart i ich zdolności, 12 HP, 6 kart początkowych, dobieranie,
   odnawialna energia, legalne ruchy i jednoczesne obrażenia.
 - Bot losowy, agresywny i kontrolny. Dwa ostatnie są prostymi heurystykami.
 - Osobne, deterministyczne strumienie RNG do obu talii i decyzji obu botów.
@@ -176,7 +177,7 @@ również `RULESET_VERSION`. Replay odrzuca raport z inną wersją silnika.
 | `unitDamage`, `directDamage` | Rzeczywiste zabrane HP, bez obrażeń ponad pozostałe życie |
 | `kills` | Bezpośrednie zabójstwa obrażeniami walki/trucizny, bez kaskad utraty premii |
 | `healing` | Rzeczywiście przywrócone HP |
-| `damagePrevented` | Obrażenia pochłonięte przez Asterixa lub osłonę Falballi/Dobrominy |
+| `damagePrevented` | Obrażenia zwrotne zignorowane przez Asterixa; warunkowe HP Falballi/Dobrominy jest liczone jako otrzymane obrażenia |
 | `stunsApplied` | Jednostki, którym nałożono blokadę, gdy nie miały już blokady |
 | `scoreWhenDrawn`, `scoreWhenPlayed` | Wynik gracza w zakończonych partiach, gdy dobrał/zagrał przynajmniej jedną kopię |
 

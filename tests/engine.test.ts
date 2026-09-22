@@ -46,6 +46,16 @@ const hit = (s: GameState, attacker: Permanent, defender: Permanent | string) =>
 });
 
 describe('Podstawowe zasady', () => {
+  test('domyślne zasady odpowiadają wersji galowie-v5', () => {
+    expect(createGame().rules).toMatchObject({
+      startingHp: 12,
+      openingHand: 6,
+      drawPerTurn: 1,
+      secondPlayerFirstDraw: 1,
+      allowFirstTurnAttacks: false,
+      maxEnergy: 10,
+    });
+  });
   test.each([0, 1] as const)('brak ataków obu graczy w pierwszej własnej turze; zaczyna %s', firstPlayer => {
     const s = createGame({ firstPlayer });
     const units: Permanent[] = [];
@@ -60,23 +70,23 @@ describe('Podstawowe zasady', () => {
       if (turn === 1) expect(() => hit(s, g, units[0])).toThrow('Nielegalny');
       end(s);
     }
-    expect(s.players.map(p => p.hp)).toEqual([15, 15]);
+    expect(s.players.map(p => p.hp)).toEqual([12, 12]);
     expect(getLegalActions(s)).toContainEqual({ type: 'attack', attackerUid: units[0].uid, targetUid: units[1].uid });
     end(s);
     expect(getLegalActions(s)).toContainEqual({ type: 'attack', attackerUid: units[1].uid, targetUid: units[0].uid });
   });
-  test('20 rodzajów kart, po 3 kopie w każdej osobnej talii, 6 kart i 15 HP na start', () => {
+  test('20 rodzajów kart, po 3 kopie w każdej osobnej talii, 6 kart i 12 HP na start', () => {
     const s = createGame({ seed: 7 });
     expect(CARD_IDS).toHaveLength(20);
     for (const p of s.players) {
-      expect(p.hp).toBe(15);
+      expect(p.hp).toBe(12);
       expect(p.hand).toHaveLength(6);
       expect(p.deck).toHaveLength(54);
       for (const id of CARD_IDS) expect([...p.hand, ...p.deck].filter(c => c.cardId === id)).toHaveLength(3);
     }
     expect(s.players[0].hand).not.toEqual(s.players[1].hand);
   });
-  test.each([0, 1] as const)('drugi gracz dobiera 1 w pierwszej turze, później obaj po 2; zaczyna miejsce %s', firstPlayer => {
+  test.each([0, 1] as const)('drugi gracz dobiera 1 w pierwszej turze, później obaj po 1; zaczyna miejsce %s', firstPlayer => {
     const s = createGame({ firstPlayer });
     const secondPlayer = firstPlayer === 0 ? 1 : 0;
     expect(s.players.map(p => p.hand.length)).toEqual([6, 6]);
@@ -85,14 +95,14 @@ describe('Podstawowe zasady', () => {
     expect(s.players[secondPlayer].hand).toHaveLength(7);
     expect(s.players[secondPlayer].deck).toHaveLength(53);
     end(s);
-    expect(s.players[firstPlayer].hand).toHaveLength(8);
+    expect(s.players[firstPlayer].hand).toHaveLength(7);
     expect(s.players[secondPlayer].hand).toHaveLength(7);
     end(s);
-    expect(s.players[firstPlayer].hand).toHaveLength(8);
-    expect(s.players[secondPlayer].hand).toHaveLength(9);
+    expect(s.players[firstPlayer].hand).toHaveLength(7);
+    expect(s.players[secondPlayer].hand).toHaveLength(8);
     end(s);
-    expect(s.players[firstPlayer].hand).toHaveLength(10);
-    expect(s.players[secondPlayer].hand).toHaveLength(9);
+    expect(s.players[firstPlayer].hand).toHaveLength(8);
+    expect(s.players[secondPlayer].hand).toHaveLength(8);
   });
   test('Gęsi mają 1/1 za 1 i poza pierwszą turą atakują od razu bez wzmocnień', () => {
     const s = scenario();
@@ -100,7 +110,7 @@ describe('Podstawowe zasady', () => {
     expect(getStats(s, 0, g)).toEqual({ attack: 1, health: 1, maxHealth: 1 });
     expect(s.players[0].energy).toBe(9);
     hit(s, g, playerTarget(1));
-    expect(s.players[1].hp).toBe(14);
+    expect(s.players[1].hp).toBe(11);
   });
   test('jedna karta energii na turę; nowa energia od razu dostępna, odnowienie na start tury', () => {
     const s = createGame();
@@ -132,7 +142,7 @@ describe('Podstawowe zasady', () => {
     const s = scenario();
     const a = play(s, 'obelix')!;
     hit(s, a, playerTarget(1));
-    expect(s.players[1].hp).toBe(10);
+    expect(s.players[1].hp).toBe(7);
     expect(() => hit(s, a, playerTarget(1))).toThrow();
   });
   test('najpierw całe pole, w tym Palisada; nie wolno atakować własnej karty', () => {
@@ -142,7 +152,7 @@ describe('Podstawowe zasady', () => {
     expect(() => hit(s, a, playerTarget(1))).toThrow();
     expect(() => hit(s, a, a)).toThrow();
     hit(s, a, wall);
-    expect(s.players[1].hp).toBe(15);
+    expect(s.players[1].hp).toBe(12);
     expect(s.players[1].board).toHaveLength(0);
   });
   test('obrażenia jednoczesne mogą zabić obie jednostki', () => {
@@ -172,7 +182,7 @@ describe('Podstawowe zasady', () => {
     s.players[0].deck = [];
     end(s); end(s);
     expect(s.outcome).toEqual({ kind: 'win', winner: 1, reason: 'empty-deck' });
-    expect(s.players[0].hp).toBe(15);
+    expect(s.players[0].hp).toBe(12);
   });
   test('pustą talię można skonfigurować jako pomijanie dobierania', () => {
     const s = scenario();
@@ -199,7 +209,7 @@ describe('Zdolności jednostek', () => {
     end(s); end(s);
     expect(s.players[0].board).toContain(a);
     hit(s, a, playerTarget(1));
-    expect(s.players[1].hp).toBe(12);
+    expect(s.players[1].hp).toBe(9);
     expect(s.players[0].board).not.toContain(a);
   });
   test('Geriatrix ginie po ataku nawet bez obrażeń zwrotnych', () => {
@@ -225,11 +235,11 @@ describe('Zdolności jednostek', () => {
     const s = scenario();
     const a = unit(s, 0, 'asterix');
     hit(s, a, unit(s, 1, 'dzik'));
-    expect(s.players[1].hp).toBe(15);
+    expect(s.players[1].hp).toBe(12);
     expect(getStats(s, 0, a).health).toBe(3);
     end(s); end(s);
     hit(s, a, playerTarget(1));
-    expect(s.players[1].hp).toBe(12);
+    expect(s.players[1].hp).toBe(9);
   });
   test('Panoramix wzmacnia inną jednostkę i nie można go atakować przed nią', () => {
     const s = scenario();
@@ -283,7 +293,7 @@ describe('Zdolności jednostek', () => {
     expect(boar.damage).toBe(0);
     end(s);
     expect(s.players[1].board).toEqual([wall]);
-    expect(s.players[1].hp).toBe(15);
+    expect(s.players[1].hp).toBe(12);
   });
   test.each([true, false])('trucizna — konfiguracja sumowania %s', poisonStacks => {
     const s = scenario();
@@ -323,33 +333,45 @@ describe('Zdolności jednostek', () => {
     end(s); end(s);
     expect(a.damage).toBe(2);
   });
-  test('Falballa: obrona pochłania 2 obrażenia od mężczyzny, nie od zwierzęcia', () => {
+  test('Falballa: dwóch mężczyzn zużywa wspólną pulę +2 HP, kobieta omija tę pulę', () => {
     const s = scenario();
     const f = unit(s, 0, 'falballa');
-    hit(s, f, unit(s, 1, 'automatix'));
+    const first = unit(s, 1, 'automatix');
+    const second = unit(s, 1, 'automatix');
+    const female = unit(s, 1, 'falballa');
+    end(s);
+    hit(s, first, f);
     expect(f.damage).toBe(0);
-    expect(s.metrics[0].falballa.damagePrevented).toBe(1);
-    end(s); end(s);
-    hit(s, f, unit(s, 1, 'dzik'));
+    expect(f.maleDefenseDamage).toBe(1);
+    expect(getStats(s, 0, f).health).toBe(2);
+    hit(s, second, f);
+    expect(f.damage).toBe(0);
+    expect(f.maleDefenseDamage).toBe(2);
+    expect(getStats(s, 0, f).health).toBe(2);
+    hit(s, female, f);
     expect(s.players[0].board).not.toContain(f);
   });
-  test('Dobromina w postawie ataku ma +4 przeciw mężowi, nie +6; postawa raz na turę', () => {
+  test('Dobromina atakująca Asparanoixa ma automatycznie +4 ataku, nie +6', () => {
     const s = scenario();
     const d = unit(s, 0, 'dobromina');
     const husband = unit(s, 1, 'asparanoix');
     husband.modifiers.push({ origin: 'tarcza', attack: 0, health: 2 });
-    applyAction(s, { type: 'setStance', unitUid: d.uid, stance: 'attack' });
-    expect(() => applyAction(s, { type: 'setStance', unitUid: d.uid, stance: 'defense' })).toThrow();
     hit(s, d, husband);
     expect(getStats(s, 1, husband).health).toBe(1);
     expect(getStats(s, 0, d).health).toBe(1);
+  });
+  test('Falballa atakująca mężczyznę nie dostaje premii obronnej na kontrę', () => {
+    const s = scenario();
+    const f = unit(s, 0, 'falballa');
+    hit(s, f, unit(s, 1, 'automatix'));
+    expect(f.damage).toBe(1);
+    expect(f.maleDefenseDamage).toBe(0);
   });
   test('warunkowa premia pozwala zaatakować mężczyznę mimo wyzerowanego ataku bazowego', () => {
     const s = scenario();
     const f = unit(s, 0, 'falballa');
     f.modifiers.push({ origin: 'asparanoix', attack: -2, health: 0 });
     const d = unit(s, 1, 'automatix');
-    applyAction(s, { type: 'setStance', unitUid: f.uid, stance: 'attack' });
     hit(s, f, d);
     expect(d.damage).toBe(2);
   });
@@ -419,9 +441,9 @@ describe('Wzmocnienia i czary', () => {
   });
   test('Pieczony dzik leczy tylko brakujące życie gracza lub jednostki', () => {
     const s = scenario();
-    s.players[0].hp = 14;
+    s.players[0].hp = 11;
     play(s, 'pieczony_dzik', playerTarget(0));
-    expect(s.players[0].hp).toBe(15);
+    expect(s.players[0].hp).toBe(12);
     const u = unit(s, 0, 'obelix');
     u.damage = 3;
     play(s, 'pieczony_dzik', u.uid);

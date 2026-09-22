@@ -5,7 +5,6 @@ export type CardId =
   | 'miecz' | 'tarcza' | 'magiczny_napoj' | 'kociolek' | 'palisada'
   | 'dzik' | 'pieczony_dzik' | 'sierp' | 'spadajace_niebo' | 'gesi';
 export type CardKind = 'unit' | 'building' | 'equipment' | 'spell';
-export type Stance = 'attack' | 'defense';
 export type Debuff = 'both' | 'attack' | 'health';
 export interface CardDefinition {
   id: CardId;
@@ -30,9 +29,9 @@ export interface Modifier {
 }
 export interface Permanent extends CardInstance {
   damage: number;
+  /** Damage already absorbed by the conditional HP bonus against male attackers. */
+  maleDefenseDamage: number;
   attacksUsed: number;
-  stance: Stance;
-  stanceChanged: boolean;
   modifiers: Modifier[];
   protectedBy?: string;
   auraActive: boolean;
@@ -68,7 +67,6 @@ export interface Rules {
 export type Action =
   | { type: 'createEnergy'; cardUid: string }
   | { type: 'playCard'; cardUid: string; targetUid?: string; debuff?: Debuff }
-  | { type: 'setStance'; unitUid: string; stance: Stance }
   | { type: 'attack'; attackerUid: string; targetUid: string }
   | { type: 'endTurn' };
 export interface CardMetrics {
