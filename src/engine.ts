@@ -9,7 +9,7 @@ import type {
 export const DEFAULT_RULES: Readonly<Rules> = {
   startingHp: 12, openingHand: 6, drawPerTurn: 1, secondPlayerFirstDraw: 1, allowFirstTurnAttacks: false, maxEnergy: 10,
   maxTurns: 200, maxActionsPerTurn: 200,
-  poisonStacks: true, emptyDeck: 'loss', stunRetaliation: false,
+  poisonStacks: true, emptyDeck: 'loss', stunRetaliation: true,
 };
 export const other = (p: PlayerId): PlayerId => p === 0 ? 1 : 0;
 export const playerTarget = (p: PlayerId): string => `player:${p}`;

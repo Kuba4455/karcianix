@@ -7,6 +7,8 @@
 - Od drugiej własnej tury można normalnie atakować, także jednostkami właśnie zagranymi.
 - Zachowano dodatkową kartę drugiego gracza w pierwszej turze; później każdy dobiera po jednej karcie. Gęsi pozostają 1/1 za 1.
 - Falballa i Dobromina używają automatycznej premii ataku/warunkowego życia zależnej od kierunku walki; usunięto postawy.
+- Zablokowane jednostki domyślnie nie oddają obrażeń (`stunRetaliation: true`).
+- Panoramix daje wyłącznie +0/+2 jednostce już leżącej na stole i jest chroniony przed atakami do utraty tej premii lub śmierci celu.
 
 Nie uruchamiano nowej serii do oceny balansu. Testy zasad i integralności silnika są oddzielne od badań balansu.
 Poprzednie wyniki **52,8% / 47,2%** dotyczą wyłącznie zasad **0.2.0**.
@@ -20,4 +22,4 @@ Aby przeprowadzić nową serię na aktualnych zasadach:
 npm run simulate -- --games 500 --seed 20260921 --out reports/v5-500
 ```
 
-Weryfikacja wersji 0.5.0: **67 testów Vitest zaliczonych**, kontrola typów TypeScript bez błędów.
+Weryfikacja wersji 0.5.0: **69 testów Vitest zaliczonych**, kontrola typów TypeScript bez błędów.

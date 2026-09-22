@@ -9,6 +9,7 @@
 - Raz we własnej turze można dobrowolnie przepalić jedną kartę z ręki na energię.
   Energia odnawia się na początku własnej tury, maksymalnie 10.
 - W pierwszej własnej turze żaden gracz nie może deklarować ataków: ani na gracza, ani na jego jednostki lub budowle. Może tworzyć energię i zagrywać karty.
+- Zablokowana jednostka nie oddaje obrażeń do chwili odblokowania.
 - Od drugiej własnej tury nowe jednostki mogą atakować od razu.
 - Zanim zaatakuje się gracza, trzeba usunąć karty z jego pola, w tym palisadę.
 - Obrażenia w walce są jednoczesne i zostają między turami.
@@ -49,7 +50,7 @@ ustalenia autora. Ich zmiana może znacząco zmienić wyniki balansu.
 |---|---|---:|---:|---|
 | `asterix` | Asterix | 3 / 3 | 4 | Jedna akcja ataku wykonuje do dwóch wymian z tą samą kartą. Pierwsze obrażenia zwrotne ignorowane. Druga wymiana tylko jeśli obie karty żyją. Bez przenoszenia drugiego uderzenia. Atak gracza tylko raz |
 | `obelix` | Obelix | 5 / 5 | 4 | Bez dodatkowej zdolności |
-| `panoramix` | Panoramix | 1 / 3 | 3 | Przy wejściu wybiera inną swoją jednostkę: +0/+2, dopóki Panoramix żyje. Dopóki ta jednostka i premia istnieją, Panoramix nie jest legalnym celem ataku. Bez innej jednostki wchodzi bez premii i ochrony |
+| `panoramix` | Panoramix | 1 / 3 | 3 | Przy wejściu wybiera swoją jednostkę, która już leży na stole, i daje jej wyłącznie +0/+2. Ten konkretny Panoramix nie jest legalnym celem ataku, dopóki żyją wybrana jednostka i jej premia. Bez innej jednostki wchodzi bez premii i ochrony |
 | `falballa` | Falballa | 2 / 2 | 2 | Atakując mężczyznę dostaje +2 ataku; atakowana przez mężczyznę korzysta z dodatkowej puli 2 HP |
 | `dobromina` | Dobromina | 1 / 3 | 2 | Jak Falballa, lecz przeciw wrogiemu Asparanoixowi obie premie wynoszą 4 zamiast 2 |
 | `asparanoix` | Asparanoix | 2 / 4 | 3 | Przy wejściu wybiera kartę wrogiego pola i -1/-1, -2/0 lub 0/-2. Osłabienie znika po śmierci Asparanoixa; może zabić cel przez obniżenie HP. Bez wrogiej karty wchodzi bez efektu |
@@ -91,14 +92,17 @@ zużywają jedną wspólną pulę, a nie odnawiają premię przed drugim uderzen
 
 - Blokada uniemożliwia deklarowanie ataku. Nie wyłącza pasywnej trucizny,
   aury ani zdolności przy wejściu nowych kart.
-- Domyślnie zablokowana karta oddaje obrażenia. Opcja `stunRetaliation: true`
-  pozwala zbadać przeciwną interpretację.
+- Domyślnie zablokowana karta nie oddaje obrażeń do chwili odblokowania.
+  Opcja `stunRetaliation: false` pozwala zbadać wariant z obrażeniami zwrotnymi.
 - Nowe jednostki rywala zagrane po blokadzie nie są nią objęte.
 - Blokada nałożona przy wejściu działa do terminu również po śmierci Kakofonixa.
   Nie odnawia się co turę przez samą obecność Kakofonixa.
-- Ochrona Panoramixa ogranicza wyłącznie cele ataków. Trucizna i zdolność
-  Asparanoixa mogą go dosięgnąć. Po usunięciu jego premii przez Spadające niebo
-  znika również powiązana ochrona.
+- Panoramix zwiększa wyłącznie obronę wybranej własnej jednostki już leżącej
+  na stole: daje jej +0/+2, bez premii do ataku. Ten konkretny Panoramix nie
+  może zostać wybrany jako cel ataku, dopóki żyje wzmocniona postać i działa
+  jej premia. Ochrona ogranicza wyłącznie cele ataków: trucizna i zdolność
+  Asparanoixa nadal mogą go dosięgnąć. Po usunięciu premii przez Spadające
+  niebo znika również powiązana ochrona.
 - Spadające niebo pozostawia ujemne modyfikatory: osłabienia Asparanoixa i kac.
   Usunięcie aktywnej premii napoju nie usuwa zobowiązania do kaca na koniec tury.
 - Wrodzone zdolności Asterixa/Falballi/Dobrominy nie są dodatnim modyfikatorem
@@ -119,4 +123,4 @@ Wersja 0.2.0: `secondPlayerFirstDraw: 1` określa dodatkowe dobieranie drugiego 
 
 Wersja 0.3.0: `startingHp: 15` ustala początkowe i maksymalne HP gracza. `allowFirstTurnAttacks: false` blokuje deklaracje ataków podczas pierwszej własnej tury każdego gracza. Od drugiej tury blokada znika. Nie wyłącza zdolności pasywnych ani normalnych obrażeń zwrotnych, gdy ataki są już możliwe.
 
-Wersja 0.5.0: domyślne zasady to `startingHp: 12`, `openingHand: 6`, `drawPerTurn: 1`, `secondPlayerFirstDraw: 1`, `allowFirstTurnAttacks: false` i `maxEnergy: 10`. Falballa i Dobromina używają automatycznej premii kierunkowej zamiast postaw.
+Wersja 0.5.0: domyślne zasady to `startingHp: 12`, `openingHand: 6`, `drawPerTurn: 1`, `secondPlayerFirstDraw: 1`, `allowFirstTurnAttacks: false`, `maxEnergy: 10` i `stunRetaliation: true`. Falballa i Dobromina używają automatycznej premii kierunkowej zamiast postaw.
