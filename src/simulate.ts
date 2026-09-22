@@ -1,5 +1,6 @@
 import { CARD_IDS } from './cards.ts';
 import { chooseAction } from './bots.ts';
+import type { ActionPreview } from './bots.ts';
 import { applyAction, assertInvariants, createGame, emptyCardMetrics, getLegalActions, observe } from './engine.ts';
 import { deriveSeed, Rng } from './rng.ts';
 import type { Action, BotKind, GameOptions, GameState, Metrics, Outcome, PlayerId } from './types.ts';
@@ -17,6 +18,18 @@ export interface GameResult {
   metrics: [Metrics, Metrics];
   trace?: TraceStep[];
   events?: GameState['events'];
+}
+export function createActionPreview(s: GameState, owner: PlayerId): ActionPreview {
+  return sequence => {
+    const copy = structuredClone(s);
+    for (const action of sequence) {
+      if (copy.outcome || copy.currentPlayer !== owner) break;
+      applyAction(copy, action);
+    }
+    const sameTurn = !copy.outcome && copy.currentPlayer === owner;
+    return { observation: observe(copy, owner), actions: sameTurn ? getLegalActions(copy) : [],
+      outcome: copy.outcome, sameTurn };
+  };
 }
 export function runGame(options: GameOptions & { verify?: boolean } = {}): GameResult {
   const s = createGame(options);
@@ -46,7 +59,7 @@ export function runGame(options: GameOptions & { verify?: boolean } = {}): GameR
       const card = s.players[owner].hand.find(c => c.uid === action.cardUid)!;
       s.metrics[owner][card.cardId].playableCopyTurns++;
     }
-    const action = chooseAction(bots[owner], observe(s), legal, rngs[owner]);
+    const action = chooseAction(bots[owner], observe(s), legal, rngs[owner], createActionPreview(s, owner));
     trace?.push({ turn: s.turn, player: owner, action });
     applyAction(s, action);
     actions++;

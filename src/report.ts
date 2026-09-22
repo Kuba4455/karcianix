@@ -7,8 +7,8 @@ import type { runExperiment } from './experiments.ts';
 import type { GameResult, Summary } from './simulate.ts';
 import type { BotKind, CardId, CardPatch, Rules } from './types.ts';
 
-export const ENGINE_VERSION = '0.5.0';
-export const RULESET_VERSION = 'galowie-v5';
+export const ENGINE_VERSION = '0.6.0';
+export const RULESET_VERSION = 'galowie-v6';
 export const percentage = (x: number | null) => x === null ? 'brak danych' : `${(x * 100).toFixed(2)}%`;
 export interface ReportMetadata {
   mode: 'simulate' | 'experiment';
@@ -60,7 +60,7 @@ export async function saveReport(directory: string, metadata: ReportMetadata, re
     'Okazja = konkretna kopia miała co najmniej jedną legalną akcję zagrania w danej własnej turze, niezależnie od liczby celów i pozostałych akcji. Licznik czasu na ręce używa analogicznych kopio-tur. Obrażenia są efektywne, bez nadmiarowych obrażeń. Zabójstwa obejmują bezpośrednie obrażenia walki/trucizny; usunięcia przez spadek maksymalnego HP i śmierć źródła nie są przypisywane jako zabójstwa.', '',
     'Leczenie, warunkowe pule życia, blokady i pełne liczniki są w CSV/JSON. „Nałożone blokady” nie oznaczają liczby udaremnionych ataków. Wkład wzmocnień w późniejsze obrażenia przypisywany jest atakującej jednostce; wpływ kart wsparcia badaj eksperymentem z wyłączoną zdolnością.', '',
     '## Granice wnioskowania', '',
-    '- Boty agresywny i kontrolny używają heurystyk, bez przeszukiwania wielu ruchów i bez informacji ukrytej.',
+    '- Boty agresywny i kontrolny używają heurystyk oraz podglądu jednego kolejnego ruchu. Nie dostają informacji ukrytej i nie przeszukują pełnych tur ani przyszłych tur przeciwnika.',
     '- Założenia mechaniki, w tym warunkowe życie Falballi/Dobrominy i działanie Spadającego nieba, opisuje RULES.md.',
     '- Przerwania limitu nie są remisami i nie mają przypisanego wyniku 0,5.',
     '- Po badaniu wielu kart potwierdź wybrany wynik na nowych seedach; nie interpretuj wielu przedziałów 95% jako jednoczesnej gwarancji.',

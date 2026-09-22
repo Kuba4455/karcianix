@@ -46,7 +46,7 @@ const hit = (s: GameState, attacker: Permanent, defender: Permanent | string) =>
 });
 
 describe('Podstawowe zasady', () => {
-  test('domyślne zasady odpowiadają wersji galowie-v5', () => {
+  test('domyślne zasady odpowiadają wersji galowie-v6', () => {
     expect(createGame().rules).toMatchObject({
       startingHp: 12,
       openingHand: 6,
@@ -105,10 +105,10 @@ describe('Podstawowe zasady', () => {
     expect(s.players[firstPlayer].hand).toHaveLength(8);
     expect(s.players[secondPlayer].hand).toHaveLength(8);
   });
-  test('Gęsi mają 1/1 za 1 i poza pierwszą turą atakują od razu bez wzmocnień', () => {
+  test('Gęsi mają 1/2 za 1 i poza pierwszą turą atakują od razu bez wzmocnień', () => {
     const s = scenario();
     const g = play(s, 'gesi')!;
-    expect(getStats(s, 0, g)).toEqual({ attack: 1, health: 1, maxHealth: 1 });
+    expect(getStats(s, 0, g)).toEqual({ attack: 1, health: 2, maxHealth: 2 });
     expect(s.players[0].energy).toBe(9);
     hit(s, g, playerTarget(1));
     expect(s.players[1].hp).toBe(11);

@@ -7,7 +7,7 @@ function card(id: CardId, name: string, kind: CardDefinition['kind'], attack: nu
 
 export const CARDS: readonly CardDefinition[] = [
   card('asterix', 'Asterix', 'unit', 3, 3, 4, 'Dwa uderzenia w tę samą kartę; ignoruje pierwsze obrażenia zwrotne.', 'male'),
-  card('obelix', 'Obelix', 'unit', 5, 5, 4, '', 'male'),
+  card('obelix', 'Obelix', 'unit', 5, 5, 5, '', 'male'),
   card('panoramix', 'Panoramix', 'unit', 1, 3, 3, 'Przy wejściu: +0/+2 swojej jednostce, która już leży na stole. Ten Panoramix jest chroniony, dopóki żyje wzmocniona jednostka i działa premia.', 'male'),
   card('falballa', 'Falballa', 'unit', 2, 2, 2, 'Atakując mężczyznę: +2 ataku. Atakowana przez mężczyznę: +2 warunkowego życia.', 'female'),
   card('dobromina', 'Dobromina', 'unit', 1, 3, 2, 'Jak Falballa; przeciw Asparanoixowi premia wynosi 4 zamiast 2.', 'female'),
@@ -15,8 +15,8 @@ export const CARDS: readonly CardDefinition[] = [
   card('ahigienix', 'Ahigienix', 'unit', 1, 4, 3, 'Na początku tury rywala: 1 obrażenie każdej jego jednostce.', 'male'),
   card('automatix', 'Automatix', 'unit', 1, 5, 3, '', 'male'),
   card('geriatrix', 'Geriatrix', 'unit', 3, 1, 1, 'Ginę po rozliczeniu własnego ataku.', 'male'),
-  card('kakofonix', 'Kakofonix', 'unit', 3, 1, 3, 'Przy wejściu blokuje atak obecnych wrogich jednostek do początku następnej własnej tury.', 'male'),
-  card('miecz', 'Miecz', 'equipment', 0, 0, 1, 'Stałe +2 ataku swojej jednostce.'),
+  card('kakofonix', 'Kakofonix', 'unit', 2, 1, 3, 'Przy wejściu blokuje atak obecnych wrogich jednostek do początku następnej własnej tury.', 'male'),
+  card('miecz', 'Miecz', 'equipment', 0, 0, 2, 'Stałe +2 ataku swojej jednostce.'),
   card('tarcza', 'Tarcza', 'equipment', 0, 0, 1, 'Stałe +1 życia swojej jednostce.'),
   card('magiczny_napoj', 'Magiczny napój', 'spell', 0, 0, 2, '+3/+3 do końca własnej tury, potem stałe -1/-1.'),
   card('kociolek', 'Kociołek', 'building', 0, 3, 4, 'Aura +1/+1 wszystkim własnym jednostkom.'),
@@ -24,8 +24,8 @@ export const CARDS: readonly CardDefinition[] = [
   card('dzik', 'Dzik', 'unit', 2, 1, 1),
   card('pieczony_dzik', 'Pieczony dzik', 'spell', 0, 0, 1, 'Leczy własnego gracza lub jednostkę o 2, do maksimum.'),
   card('sierp', 'Sierp', 'equipment', 0, 0, 1, 'Stałe +1 ataku swojej jednostce.'),
-  card('spadajace_niebo', 'Spadające niebo', 'spell', 0, 0, 2, 'Blokada jak u Kakofonixa; usuwa dodatnie wzmocnienia obu pól i wyłącza obecne aury kociołków.'),
-  card('gesi', 'Gęsi', 'unit', 1, 1, 1),
+  card('spadajace_niebo', 'Spadające niebo', 'spell', 0, 0, 3, 'Blokada jak u Kakofonixa; usuwa dodatnie wzmocnienia obu pól i wyłącza obecne aury kociołków.'),
+  card('gesi', 'Gęsi', 'unit', 1, 2, 1),
 ];
 export const CARD_IDS = CARDS.map(c => c.id);
 export function createCatalog(overrides: Partial<Record<CardId, CardPatch>> = {}): Catalog {
