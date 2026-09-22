@@ -13,6 +13,8 @@ interpretacja warunkowego życia Falballi/Dobrominy, blokad i Spadającego nieba
 - Obaj gracze zaczynają z **12 HP**, leczenie gracza nie przekracza 12 HP.
 - Spadające niebo kosztuje **2 energii**.
 - W pierwszej własnej turze obu graczy nie można deklarować żadnego ataku. Można tworzyć energię i zagrywać karty. Od drugiej własnej tury jednostki, także nowo zagrane, mogą normalnie atakować.
+- Zablokowana jednostka nie oddaje obrażeń do chwili odblokowania.
+- Panoramix daje wybranej jednostce już leżącej na stole wyłącznie +0/+2 i pozostaje chroniony przed atakami, dopóki żyją ta jednostka oraz jej premia.
 - Falballa i Dobromina automatycznie dostają premię ataku, gdy atakują mężczyznę, oraz zużywalną pulę dodatkowego HP, gdy są przez niego atakowane. Nie wymagają przełączania postawy.
 
 ### Zachowane zmiany z wersji 0.2.0

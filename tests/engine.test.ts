@@ -54,6 +54,7 @@ describe('Podstawowe zasady', () => {
       secondPlayerFirstDraw: 1,
       allowFirstTurnAttacks: false,
       maxEnergy: 10,
+      stunRetaliation: true,
     });
   });
   test.each([0, 1] as const)('brak ataków obu graczy w pierwszej własnej turze; zaczyna %s', firstPlayer => {
@@ -246,7 +247,7 @@ describe('Zdolności jednostek', () => {
     const target = unit(s, 0, 'automatix');
     const p = play(s, 'panoramix', target.uid)!;
     const enemy = unit(s, 1, 'obelix');
-    expect(getStats(s, 0, target).health).toBe(7);
+    expect(getStats(s, 0, target)).toEqual({ attack: 1, health: 7, maxHealth: 7 });
     end(s);
     expect(() => hit(s, enemy, p)).toThrow();
     target.damage = 7;
@@ -259,6 +260,15 @@ describe('Zdolności jednostek', () => {
     const enemy = unit(s, 1, 'obelix');
     end(s);
     expect(getLegalActions(s)).toContainEqual({ type: 'attack', attackerUid: enemy.uid, targetUid: p.uid });
+  });
+  test('zdolność Asparanoixa może dosięgnąć chronionego Panoramixa', () => {
+    const s = scenario();
+    const target = unit(s, 0, 'automatix');
+    const p = play(s, 'panoramix', target.uid)!;
+    end(s);
+    play(s, 'asparanoix', p.uid, 'health');
+    expect(getStats(s, 0, p)).toEqual({ attack: 1, health: 1, maxHealth: 1 });
+    expect(p.protectedBy).toBe(target.uid);
   });
   test('utrata źródła wzmocnienia może spowodować kolejną śmierć', () => {
     const s = scenario();
@@ -323,15 +333,24 @@ describe('Zdolności jednostek', () => {
     end(s);
     expect(target.stuns).toHaveLength(0);
   });
-  test('blokada nie wyłącza domyślnie obrażeń zwrotnych ani trucizny', () => {
+  test('zablokowana jednostka nie oddaje obrażeń, ale jej trucizna nadal działa', () => {
     const s = scenario();
     const target = unit(s, 1, 'ahigienix');
     play(s, 'kakofonix');
     const a = unit(s, 0, 'automatix');
     hit(s, a, target);
-    expect(a.damage).toBe(1);
+    expect(a.damage).toBe(0);
     end(s); end(s);
-    expect(a.damage).toBe(2);
+    expect(a.damage).toBe(1);
+  });
+  test('stunRetaliation false pozwala badać wariant z obrażeniami zwrotnymi', () => {
+    const s = scenario();
+    s.rules.stunRetaliation = false;
+    const target = unit(s, 1, 'ahigienix');
+    play(s, 'kakofonix');
+    const a = unit(s, 0, 'automatix');
+    hit(s, a, target);
+    expect(a.damage).toBe(1);
   });
   test('Falballa: dwóch mężczyzn zużywa wspólną pulę +2 HP, kobieta omija tę pulę', () => {
     const s = scenario();
