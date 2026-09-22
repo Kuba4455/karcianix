@@ -27,13 +27,10 @@ function attackScore(o: PlayerObservation, action: Extract<Action, { type: 'atta
   const d = o.opponent.board.find(u => u.uid === action.targetUid)!;
   const dDef = o.catalogs[other(o.player)][d.cardId];
   const dStats = stats(d, o.opponent.board, o.catalogs[other(o.player)]);
-  const aBonus = combatBonus(aDef, a, dDef);
-  const dBonus = combatBonus(dDef, d, aDef);
-  const outgoing = Math.max(0, aStats.attack + (a.stance === 'attack' ? aBonus : 0) - (d.stance === 'defense' ? dBonus : 0));
-  const incoming = o.rules.stunRetaliation && d.stuns.length ? 0 : Math.max(0,
-    dStats.attack + (d.stance === 'attack' ? dBonus : 0) - (a.stance === 'defense' ? aBonus : 0));
+  const outgoing = Math.max(0, aStats.attack + combatBonus(aDef, dDef));
+  const incoming = o.rules.stunRetaliation && d.stuns.length ? 0 : dStats.attack;
   let aHp = aStats.health;
-  let dHp = dStats.health;
+  let dHp = dStats.health + Math.max(0, combatBonus(dDef, aDef) - d.maleDefenseDamage);
   const twice = a.cardId === 'asterix' && aDef.abilityEnabled;
   for (let i = 0; i < (twice ? 2 : 1); i++) {
     dHp -= outgoing;
@@ -72,23 +69,6 @@ function score(o: PlayerObservation, action: Action, control: boolean): number {
       if (o.self.hand.length <= 1 && o.self.maxEnergy >= 4 && !canUnlock) return -5;
       const growth = nextEnergy <= 4 ? 14 : nextEnergy <= 6 ? 8 : o.self.hand.length >= 5 ? 5 : 0;
       return growth + (canUnlock ? 4 : 0) - handValue(o, catalog[card.cardId], control) * 0.65;
-    }
-    case 'setStance': {
-      const unit = o.self.board.find(c => c.uid === action.unitUid)!;
-      if (!o.rules.allowFirstTurnAttacks && o.self.turnsTaken === 1) return action.stance === 'defense' ? 0.3 : -1;
-      const male = o.opponent.board.some(u => enemyCatalog[u.cardId].gender === 'male');
-      if (!male) return -1;
-      // One choice per own turn; retained for defending on the opponent's turn.
-      let before = -Infinity;
-      let after = -Infinity;
-      for (const d of o.opponent.board) {
-        const attack: Extract<Action, { type: 'attack' }> = { type: 'attack', attackerUid: unit.uid, targetUid: d.uid };
-        before = Math.max(before, attackScore(o, attack, control));
-        const copy = { ...o, self: { ...o.self, board: o.self.board.map(u => u.uid === unit.uid ? { ...u, stance: action.stance } : u) } };
-        after = Math.max(after, attackScore(copy, attack, control));
-      }
-      if (unit.attacksUsed > 0) return action.stance === 'defense' ? 0.3 : -1;
-      return after > before + 0.1 ? 20 + after - before : -1;
     }
     case 'playCard': {
       const card = o.self.hand.find(c => c.uid === action.cardUid)!;

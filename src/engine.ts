@@ -21,7 +21,7 @@ export function emptyMetrics(): Metrics {
   return Object.fromEntries(CARD_IDS.map(id => [id, emptyCardMetrics()])) as Metrics;
 }
 export function makePermanent(card: CardInstance): Permanent {
-  return { ...card, damage: 0, attacksUsed: 0, stance: 'defense', stanceChanged: false,
+  return { ...card, damage: 0, maleDefenseDamage: 0, attacksUsed: 0,
     modifiers: [], auraActive: true, potions: [], stuns: [] };
 }
 export function validateRules(rules: Rules): void {
@@ -72,10 +72,10 @@ export function stats(unit: Permanent, board: readonly Permanent[], catalog: Cat
 export function getStats(s: GameState, owner: PlayerId, unit: Permanent) {
   return stats(unit, s.players[owner].board, s.catalogs[owner]);
 }
-export function combatBonus(def: CardDefinition, unit: Permanent, against: CardDefinition): number {
+export function combatBonus(def: CardDefinition, against: CardDefinition): number {
   if (!def.abilityEnabled || against.gender !== 'male') return 0;
-  if (unit.cardId === 'falballa') return 2;
-  if (unit.cardId === 'dobromina') return against.id === 'asparanoix' ? 4 : 2;
+  if (def.id === 'falballa') return 2;
+  if (def.id === 'dobromina') return against.id === 'asparanoix' ? 4 : 2;
   return 0;
 }
 export function protectedUnit(s: GameState, owner: PlayerId, unit: Permanent): boolean {
@@ -125,6 +125,21 @@ function unitDamage(s: GameState, sourceOwner: PlayerId, source: CardId, owner: 
   if (getStats(s, owner, target).health <= 0) s.metrics[sourceOwner][source].kills++;
   event(s, { type: 'unit-damage', player: sourceOwner, cardId: source, targetUid: target.uid, amount: effective });
 }
+function combatDamage(s: GameState, sourceOwner: PlayerId, source: Permanent,
+  owner: PlayerId, target: Permanent, amount: number): void {
+  const before = getStats(s, owner, target).health;
+  if (before <= 0 || amount <= 0) return;
+  const bonus = combatBonus(s.catalogs[owner][target.cardId], s.catalogs[sourceOwner][source.cardId]);
+  const bonusRemaining = Math.max(0, bonus - target.maleDefenseDamage);
+  const bonusDamage = Math.min(amount, bonusRemaining);
+  const baseDamage = amount - bonusDamage;
+  target.maleDefenseDamage += bonusDamage;
+  target.damage += baseDamage;
+  const effective = bonusDamage + Math.min(before, baseDamage);
+  s.metrics[sourceOwner][source.cardId].unitDamage += effective;
+  if (getStats(s, owner, target).health <= 0) s.metrics[sourceOwner][source.cardId].kills++;
+  event(s, { type: 'unit-damage', player: sourceOwner, cardId: source.cardId, targetUid: target.uid, amount: effective });
+}
 function startTurn(s: GameState): void {
   const owner = s.currentPlayer;
   const p = s.players[owner];
@@ -135,7 +150,7 @@ function startTurn(s: GameState): void {
   for (const side of s.players) for (const u of side.board) {
     u.stuns = u.stuns.filter(e => e.sourceOwner !== owner || e.expiresAtOwnerTurn > p.turnsTaken);
   }
-  for (const u of p.board) { u.attacksUsed = 0; u.stanceChanged = false; }
+  for (const u of p.board) u.attacksUsed = 0;
   event(s, { type: 'turn-start', player: owner });
   const enemy = other(owner);
   let poisons = s.players[enemy].board.filter(u => u.cardId === 'ahigienix' && s.catalogs[enemy][u.cardId].abilityEnabled);
@@ -200,15 +215,12 @@ export function getLegalActions(s: GameState): Action[] {
   for (const u of self.board) {
     const def = s.catalogs[owner][u.cardId];
     if (u.stuns.length) continue;
-    if (def.abilityEnabled && ['falballa', 'dobromina'].includes(u.cardId) && !u.stanceChanged) {
-      actions.push({ type: 'setStance', unitUid: u.uid, stance: u.stance === 'attack' ? 'defense' : 'attack' });
-    }
     if (def.kind !== 'unit' || u.attacksUsed > 0) continue;
     if (!s.rules.allowFirstTurnAttacks && self.turnsTaken === 1) continue;
     const baseAttack = getStats(s, owner, u).attack;
     if (enemy.board.length === 0 && baseAttack > 0) actions.push({ type: 'attack', attackerUid: u.uid, targetUid: playerTarget(enemyOwner) });
     else for (const target of enemy.board) if (!protectedUnit(s, enemyOwner, target)) {
-      const bonus = u.stance === 'attack' ? combatBonus(def, u, s.catalogs[enemyOwner][target.cardId]) : 0;
+      const bonus = combatBonus(def, s.catalogs[enemyOwner][target.cardId]);
       if (baseAttack + bonus > 0) actions.push({ type: 'attack', attackerUid: u.uid, targetUid: target.uid });
     }
   }
@@ -297,17 +309,12 @@ function attack(s: GameState, action: Extract<Action, { type: 'attack' }>): void
       const defender = s.players[enemy].board.find(u => u.uid === action.targetUid);
       if (!defender || !s.players[owner].board.some(u => u.uid === attacker.uid)) break;
       const dDef = s.catalogs[enemy][defender.cardId];
-      const aBonus = combatBonus(aDef, attacker, dDef);
-      const dBonus = combatBonus(dDef, defender, aDef);
-      const aAttack = getStats(s, owner, attacker).attack + (attacker.stance === 'attack' ? aBonus : 0);
-      const dAttack = s.rules.stunRetaliation && defender.stuns.length ? 0 :
-        getStats(s, enemy, defender).attack + (defender.stance === 'attack' ? dBonus : 0);
-      const aShield = hits === 2 && hit === 0 ? dAttack : attacker.stance === 'defense' ? Math.min(dAttack, aBonus) : 0;
-      const dShield = defender.stance === 'defense' ? Math.min(aAttack, dBonus) : 0;
+      const aAttack = getStats(s, owner, attacker).attack + combatBonus(aDef, dDef);
+      const dAttack = s.rules.stunRetaliation && defender.stuns.length ? 0 : getStats(s, enemy, defender).attack;
+      const aShield = hits === 2 && hit === 0 ? dAttack : 0;
       s.metrics[owner][attacker.cardId].damagePrevented += aShield;
-      s.metrics[enemy][defender.cardId].damagePrevented += dShield;
       // Both damage amounts are computed before either death is resolved.
-      unitDamage(s, owner, attacker.cardId, enemy, defender, aAttack - dShield);
+      combatDamage(s, owner, attacker, enemy, defender, aAttack);
       unitDamage(s, enemy, defender.cardId, owner, attacker, dAttack - aShield);
       sweepDeaths(s);
     }
@@ -341,12 +348,6 @@ export function applyAction(s: GameState, action: Action): GameState {
     }
     case 'playCard': play(s, action); break;
     case 'attack': attack(s, action); break;
-    case 'setStance': {
-      const unit = self.board.find(u => u.uid === action.unitUid)!;
-      unit.stance = action.stance;
-      unit.stanceChanged = true;
-      break;
-    }
     case 'endTurn': endTurn(s); break;
   }
   if (!s.outcome && s.actionsThisTurn >= s.rules.maxActionsPerTurn) s.outcome = { kind: 'truncated', reason: 'action-limit' };
