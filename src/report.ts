@@ -7,8 +7,8 @@ import type { runExperiment } from './experiments.ts';
 import type { GameResult, Summary } from './simulate.ts';
 import type { BotKind, CardId, CardPatch, Rules } from './types.ts';
 
-export const ENGINE_VERSION = '0.6.0';
-export const RULESET_VERSION = 'galowie-v6';
+export const ENGINE_VERSION = '0.7.0';
+export const RULESET_VERSION = 'galowie-rzymianie-v7';
 export const percentage = (x: number | null) => x === null ? 'brak danych' : `${(x * 100).toFixed(2)}%`;
 export interface ReportMetadata {
   mode: 'simulate' | 'experiment';
@@ -28,12 +28,13 @@ export async function saveReport(directory: string, metadata: ReportMetadata, re
   const meta = { ...metadata, engineVersion: ENGINE_VERSION, rulesetVersion: RULESET_VERSION, defaultRules: DEFAULT_RULES,
     catalogs: { baseline: experiment?.baseline ?? catalog, variant: experiment?.variant ?? null } };
   const gameRecords = results.map((r, index) => ({ index, seed: r.seed, firstPlayer: r.firstPlayer, bots: r.bots,
-    botSeeds: r.botSeeds, deckSeeds: r.deckSeeds, turns: r.turns, actions: r.actions, outcome: r.outcome,
+    botSeeds: r.botSeeds, deckSeeds: r.deckSeeds, decks: r.decks, turns: r.turns, actions: r.actions, outcome: r.outcome,
     ...(experiment ? { pair: Math.floor(index / 2), variantSeat: variantSeatForGame(index) } : {}) }));
   const json = { metadata: meta, summary, comparison: experiment?.comparison ?? null, pairs: experiment?.pairs ?? null, games: gameRecords };
   const lines = [
     '# Karcianix — raport symulacji', '',
     `Silnik: ${ENGINE_VERSION}. Zasady: ${RULESET_VERSION}. Seed serii: ${metadata.seed}.`, '',
+    `Talie (gracze 0 / 1): ${results[0]?.decks.join(' / ') ?? 'brak gier'}.`, '',
     `Gry: **${summary.games}**, zakończone: **${summary.completed}**, remisy: **${summary.draws}**, przerwane limitem: **${summary.truncated}**.`,
     `Średnia długość: **${summary.averageTurns.toFixed(1)} tur gracza**; mediana ${summary.medianTurns}, P90 ${summary.p90Turns}.`,
     `Wynik rozpoczynającego (wygrana = 1, remis = 0,5): **${percentage(summary.firstPlayerScore)}**. Przegrane przez pustą talię: ${summary.emptyDeckWins}.`, '',

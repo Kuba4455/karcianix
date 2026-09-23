@@ -1,4 +1,6 @@
-# Zasady silnika — galowie-v6
+# Zasady silnika — galowie-rzymianie-v7
+
+Druga talia i zatwierdzone zdolności: [Rzymianie](ROMANS.md). Każdy gracz niezależnie wybiera Galów lub Rzymian; obie talie mają 60 kart (20 × 3).
 
 ## Ustalenia autora gry
 
@@ -44,7 +46,7 @@ ustalenia autora. Ich zmiana może znacząco zmienić wyniki balansu.
 | Limity techniczne | 200 tur gracza i 200 akcji w jednej turze; przekroczenie daje `truncated`, nie remis |
 | Płeć kart | Męskie i żeńskie są wyłącznie postacie wskazane w katalogu; zwierzęta i budowle mają `none` |
 
-## Pełna talia
+## Pełna talia Galów
 
 | ID | Nazwa | Atak / HP | Koszt | Zachowanie |
 |---|---|---:|---:|---|

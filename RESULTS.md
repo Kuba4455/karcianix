@@ -1,4 +1,26 @@
-# Status wersji 0.6.0
+# Status wersji 0.7.0
+
+Dodano talię Rzymian: 20 kart po trzy kopie, wszystkie zatwierdzone zdolności,
+wybór talii graczy, obsługę botów i odtwarzanie raportów z wybranymi taliami.
+Szczegóły: [ROMANS.md](ROMANS.md).
+
+Weryfikacja: **95 testów zaliczonych**, kontrola typów TypeScript i `git diff --check` bez błędów.
+
+Testy integracyjne CLI: raport i replay pojedynku Galowie–Rzymianie oraz
+eksperymentu kosztu Ceplusa odtwarzają wynik, liczbę tur i akcji.
+
+Próbna seria techniczna: po 100 gier, seedy 1000–1099, naprzemienny gracz
+rozpoczynający, boty aggressive/control, kontrola integralności po każdej akcji.
+
+| Talie graczy 0 / 1 | Ukończone | Przerwane | Wygrane gracza 0 / 1 |
+|---|---:|---:|---:|
+| Galowie / Rzymianie | 100 | 0 | 55 / 45 |
+| Rzymianie / Rzymianie | 100 | 0 | 49 / 51 |
+
+To weryfikacja działania, nie miarodajny ranking balansu: strategie botów były
+przypisane do miejsc, a próba jest mała. Nie zmieniono statystyk podanych przez autora.
+
+## Historyczny status wersji 0.6.0
 
 - Początkowe i maksymalne życie obu graczy: **12 HP**.
 - Spadające niebo kosztuje **3 energii**.

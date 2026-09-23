@@ -1,9 +1,13 @@
 export type PlayerId = 0 | 1;
+export type DeckId = 'galowie' | 'rzymianie';
 export type CardId =
   | 'asterix' | 'obelix' | 'panoramix' | 'falballa' | 'dobromina'
   | 'asparanoix' | 'ahigienix' | 'automatix' | 'geriatrix' | 'kakofonix'
   | 'miecz' | 'tarcza' | 'magiczny_napoj' | 'kociolek' | 'palisada'
-  | 'dzik' | 'pieczony_dzik' | 'sierp' | 'spadajace_niebo' | 'gesi';
+  | 'dzik' | 'pieczony_dzik' | 'sierp' | 'spadajace_niebo' | 'gesi'
+  | 'cezar' | 'brutus' | 'legionista' | 'wieniec' | 'katapulta' | 'antywirus'
+  | 'zolw' | 'zapchlenius' | 'popus' | 'a38' | 'pieknus' | 'tester_luster'
+  | 'kalimatis' | 'ceplus' | 'tarcza_rzymska' | 'kodeks' | 'hasta' | 'lew' | 'koloseum' | 'oszczep';
 export type CardKind = 'unit' | 'building' | 'equipment' | 'spell';
 export type Debuff = 'both' | 'attack' | 'health';
 export interface CardDefinition {
@@ -19,7 +23,7 @@ export interface CardDefinition {
 }
 export type Catalog = Record<CardId, CardDefinition>;
 export type CardPatch = Partial<Pick<CardDefinition, 'cost' | 'attack' | 'health' | 'abilityEnabled'>>;
-export interface CardInstance { uid: string; cardId: CardId }
+export interface CardInstance { uid: string; cardId: CardId; owner?: PlayerId }
 export interface Modifier {
   origin: CardId;
   attack: number;
@@ -28,6 +32,10 @@ export interface Modifier {
   expiresAtTurn?: number;
 }
 export interface Permanent extends CardInstance {
+  enteredTurn?: number;
+  hiddenBy?: string;
+  borrowedFrom?: PlayerId;
+  temporaryDamage?: { amount: number; owner: PlayerId; expiresAtOwnerTurn: number }[];
   damage: number;
   /** Damage already absorbed by the conditional HP bonus against male attackers. */
   maleDefenseDamage: number;
@@ -40,6 +48,7 @@ export interface Permanent extends CardInstance {
   stuns: { sourceOwner: PlayerId; expiresAtOwnerTurn: number }[];
 }
 export interface PlayerState {
+  knownOpponentHand: CardInstance[];
   hp: number;
   maxEnergy: number;
   energy: number;
@@ -66,7 +75,10 @@ export interface Rules {
 }
 export type Action =
   | { type: 'createEnergy'; cardUid: string }
-  | { type: 'playCard'; cardUid: string; targetUid?: string; debuff?: Debuff }
+  | { type: 'playCard'; cardUid: string; targetUid?: string; debuff?: Debuff; choice?: 'peek' | 'steal'; discardUid?: string; summonCount?: number }
+  | { type: 'sacrifice'; sourceUid: string; targetUid: string }
+  | { type: 'hide'; sourceUid: string; targetUid: string }
+  | { type: 'unhide'; targetUid: string }
   | { type: 'attack'; attackerUid: string; targetUid: string }
   | { type: 'endTurn' };
 export interface CardMetrics {
@@ -97,6 +109,8 @@ export interface GameEvent {
   amount?: number;
 }
 export interface GameState {
+  decks: [DeckId, DeckId];
+  randomEffects: number;
   seed: number;
   currentPlayer: PlayerId;
   firstPlayer: PlayerId;
@@ -125,11 +139,12 @@ export interface PlayerObservation {
   turn: number;
   rules: Rules;
   catalogs: [Catalog, Catalog];
-  self: PublicPlayer & { hand: CardInstance[]; energyCreated: boolean };
+  self: PublicPlayer & { hand: CardInstance[]; energyCreated: boolean; knownOpponentHand: CardInstance[] };
   opponent: PublicPlayer;
 }
 export type BotKind = 'random' | 'aggressive' | 'control';
 export interface GameOptions {
+  decks?: [DeckId, DeckId];
   seed?: number;
   firstPlayer?: PlayerId;
   rules?: Partial<Rules>;

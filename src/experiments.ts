@@ -1,8 +1,8 @@
-import { createCatalog } from './cards.ts';
+import { DECKS, createCatalog } from './cards.ts';
 import { deriveSeed } from './rng.ts';
 import { BOT_MATCHUPS, runGame, scoreFor, summarize } from './simulate.ts';
 import type { GameResult } from './simulate.ts';
-import type { BotKind, CardId, CardPatch, GameOptions, PlayerId } from './types.ts';
+import type { BotKind, CardId, CardPatch, GameOptions, PlayerId, DeckId } from './types.ts';
 
 export interface PairResult {
   pair: number;
@@ -40,6 +40,7 @@ export function summarizePairs(pairs: readonly PairResult[]) {
     }) };
 }
 export interface ExperimentOptions {
+  deck?: DeckId;
   games: number;
   seed: number;
   card: CardId;
@@ -53,13 +54,15 @@ export function runExperiment(options: ExperimentOptions) {
   if (!Number.isSafeInteger(options.seed) || options.seed < 0 || options.seed > 0xFFFFFFFF) throw new Error('Seed musi być liczbą uint32');
   if (Object.keys(options.patch).length !== 1) throw new Error('Zmieniaj dokładnie jeden parametr naraz');
   const baseline = createCatalog();
+  const deck = options.deck ?? (DECKS.rzymianie.includes(options.card) ? 'rzymianie' : 'galowie');
+  if (!Object.hasOwn(DECKS, deck) || !DECKS[deck].includes(options.card)) throw new Error('Karta eksperymentu musi należeć do wybranej talii');
   const variant = createCatalog({ [options.card]: options.patch });
   const results: GameResult[] = [];
   const pairs: PairResult[] = [];
   for (let i = 0; i < options.games / 2; i++) {
     const seed = deriveSeed(options.seed, `pair:${i}`);
     const bots = options.bots ?? BOT_MATCHUPS[i % BOT_MATCHUPS.length];
-    const common: GameOptions = { seed, firstPlayer: 0, bots, rules: options.rules };
+    const common: GameOptions = { seed, firstPlayer: 0, bots, rules: options.rules, decks: [deck, deck] };
     // Deck orders and decision RNG streams stay attached to seats, not variants.
     // Both variants are tested once in each starting position and bot strategy.
     const a = runGame({ ...common, catalogs: [baseline, variant] });

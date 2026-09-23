@@ -1,14 +1,21 @@
-# Karcianix — symulator talii Galów
+# Karcianix — symulator talii Galów i Rzymian
 
 Działający projekt TypeScript do testowania zasad, symulowania dowolnej liczby gier
 i porównywania pojedynczych zmian kart. Obaj gracze mają po 60 kart: po trzy kopie
-każdej z 20 kart Galów. Bez interfejsu graficznego i bez zależności produkcyjnych.
+każdej z 20 kart wybranej talii (Galowie lub Rzymianie). Bez interfejsu graficznego i bez zależności produkcyjnych.
 
 **Zacznij od [RULES.md](RULES.md).** Zasady podane przez autora są oddzielone od
 założeń potrzebnych do uruchomienia symulacji. Szczególnie istotna jest robocza
 interpretacja warunkowego życia Falballi/Dobrominy, blokad i Spadającego nieba.
 
-## Aktualne zasady — wersja 0.6.0
+## Aktualne zasady — wersja 0.7.0
+
+Karty i szczegóły nowej talii: [ROMANS.md](ROMANS.md).
+Przykład: `npm run simulate -- --games 1000 --decks galowie,rzymianie`.
+
+- Dostępne są dwie niezależne talie po 60 kart. Domyślnie obaj gracze używają Galów.
+- Rzymianie dodają m.in. poświęcanie jednostek, darmowe przyzwanie Legionistów, przejęcie kontroli, podgląd/kradzież ręki i chowanie w Koloseum.
+- Lew i Gajusz Ceplus czekają z pierwszym atakiem do następnej własnej tury.
 
 - Obaj gracze zaczynają z **12 HP**, leczenie gracza nie przekracza 12 HP.
 - Spadające niebo kosztuje **3 energii**.
@@ -47,13 +54,13 @@ wykonuje osobno `npm run typecheck`. Dokumentacja:
 
 ## Co jest gotowe
 
-- Wszystkie 20 kart i ich zdolności, 12 HP, 6 kart początkowych, dobieranie,
+- Wszystkie 40 rodzajów kart i ich zdolności, 12 HP, 6 kart początkowych, dobieranie,
   odnawialna energia, legalne ruchy i jednoczesne obrażenia.
 - Bot losowy, agresywny i kontrolny. Dwa ostatnie łączą heurystyki z podglądem
   najlepszego następnego ruchu w tej samej turze, dzięki czemu rozpoznają krótkie combo.
 - Osobne, deterministyczne strumienie RNG do obu talii i decyzji obu botów.
 - Boty dostają kopię własnej ręki i publicznych informacji. Nie dostają ręki
-  przeciwnika, kolejności talii, seeda ani historii ukrytych zdarzeń.
+  przeciwnika (poza kartami legalnie ujawnionymi przez Kalimatisa), kolejności talii, seeda ani historii ukrytych zdarzeń.
 - Kontrolowane eksperymenty: zmiana jednego parametru, zamiana miejsc, przedział
   ufności liczony na poziomie par.
 - Raporty Markdown, JSON i CSV; odtwarzanie pojedynczej gry z pełną listą akcji

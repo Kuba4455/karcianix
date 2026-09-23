@@ -7,6 +7,7 @@ import type { Action, BotKind, GameOptions, GameState, Metrics, Outcome, PlayerI
 
 export interface TraceStep { turn: number; player: PlayerId; action: Action }
 export interface GameResult {
+  decks: NonNullable<GameOptions['decks']>;
   seed: number;
   firstPlayer: PlayerId;
   bots: [BotKind, BotKind];
@@ -24,6 +25,12 @@ export function createActionPreview(s: GameState, owner: PlayerId): ActionPrevie
     const copy = structuredClone(s);
     for (const action of sequence) {
       if (copy.outcome || copy.currentPlayer !== owner) break;
+      // Do not sample actual hidden cards while planning. Evaluate draw/steal/peek
+      // heuristically; their outcomes become available only after committing a move.
+      if (action.type === 'endTurn' || (action.type === 'playCard' &&
+        ['kalimatis', 'kodeks'].includes(copy.players[owner].hand.find(c => c.uid === action.cardUid)!.cardId))) {
+        return { observation: observe(copy, owner), actions: [], outcome: null, sameTurn: false };
+      }
       applyAction(copy, action);
     }
     const sameTurn = !copy.outcome && copy.currentPlayer === owner;
@@ -65,7 +72,7 @@ export function runGame(options: GameOptions & { verify?: boolean } = {}): GameR
     actions++;
     if (options.verify) assertInvariants(s);
   }
-  return { seed: s.seed, firstPlayer: s.firstPlayer, bots, botSeeds, deckSeeds,
+  return { seed: s.seed, decks: s.decks, firstPlayer: s.firstPlayer, bots, botSeeds, deckSeeds,
     turns: s.turn, actions, outcome: s.outcome, metrics: s.metrics,
     ...(trace ? { trace, events: s.events } : {}) };
 }
@@ -140,14 +147,14 @@ export function summarize(results: readonly GameResult[]): Summary {
     averageTurns: results.length ? results.reduce((n, r) => n + r.turns, 0) / results.length : 0,
     medianTurns: quantile(0.5), p90Turns: quantile(0.9), cards };
 }
-export function runSimulation(options: { games: number; seed: number; bots?: [BotKind, BotKind]; rules?: GameOptions['rules']; onProgress?: (done: number) => void }) {
+export function runSimulation(options: { games: number; seed: number; decks?: GameOptions['decks']; bots?: [BotKind, BotKind]; rules?: GameOptions['rules']; onProgress?: (done: number) => void }) {
   if (!Number.isSafeInteger(options.games) || options.games < 1) throw new Error('Liczba gier musi być dodatnią liczbą całkowitą');
   if (!Number.isSafeInteger(options.seed) || options.seed < 0 || options.seed > 0xFFFFFFFF) throw new Error('Seed musi być liczbą uint32');
   const results: GameResult[] = [];
   for (let i = 0; i < options.games; i++) {
     // Every consecutive two games switch the first player for the same matchup.
     results.push(runGame({ seed: deriveSeed(options.seed, `game:${i}`),
-      firstPlayer: i % 2 as PlayerId,
+      firstPlayer: i % 2 as PlayerId, decks: options.decks,
       bots: options.bots ?? BOT_MATCHUPS[Math.floor(i / 2) % BOT_MATCHUPS.length], rules: options.rules }));
     if ((i + 1) % 100 === 0) options.onProgress?.(i + 1);
   }

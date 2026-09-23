@@ -73,6 +73,22 @@ function score(o: PlayerObservation, action: Action, control: boolean): number {
   const enemyCatalog = o.catalogs[other(o.player)];
   switch (action.type) {
     case 'endTurn': return 0;
+    case 'sacrifice': {
+      const target = o.self.board.find(u => u.uid === action.targetUid)!;
+      return 3.5 - boardValue(o, target, true, control) - (target.attacksUsed === 0 ? 1 : 0);
+    }
+    case 'hide': {
+      const target = o.self.board.find(u => u.uid === action.targetUid)!;
+      const st = stats(target, o.self.board, catalog);
+      const threatened = o.opponent.board.some(u => stats(u, o.opponent.board, enemyCatalog).attack >= st.health);
+      return threatened && (target.attacksUsed > 0 || target.stuns.length > 0) ? 1.5 : -2;
+    }
+    case 'unhide': {
+      const target = o.self.board.find(u => u.uid === action.targetUid)!;
+      return target.attacksUsed === 0 && !target.stuns.length && stats(target, o.self.board, catalog).attack > 0 &&
+        (o.rules.allowFirstTurnAttacks || o.self.turnsTaken > 1) &&
+        !(catalog[target.cardId].abilityEnabled && ['lew', 'ceplus'].includes(target.cardId) && target.enteredTurn === o.turn) ? 2 : -2;
+    }
     case 'attack': return attackScore(o, action, control);
     case 'createEnergy': {
       const card = o.self.hand.find(c => c.uid === action.cardUid)!;
@@ -91,6 +107,22 @@ function score(o: PlayerObservation, action: Action, control: boolean): number {
       result -= def.cost * 0.25;
       if (!def.abilityEnabled) return result;
       switch (card.cardId) {
+        case 'antywirus': result += (action.summonCount ?? 0) * 3; break;
+        case 'kalimatis': result += o.opponent.handCount ? (action.choice === 'steal' ? 4 : 0.7) : 0; break;
+        case 'kodeks': {
+          const discarded = o.self.hand.find(c => c.uid === action.discardUid)!;
+          result = o.self.deckCount < 2 && o.rules.emptyDeck === 'loss' ? -100 : 5 - handValue(o, catalog[discarded.cardId], control) * 0.7;
+          break;
+        }
+        case 'a38': if (enemy) result += stats(enemy, o.opponent.board, enemyCatalog).attack * 1.7 + 2; break;
+        case 'oszczep': if (enemy) result += stats(enemy, o.opponent.board, enemyCatalog).health <= 2 ? boardValue(o, enemy, false, control) + 3 : 0.7; break;
+        case 'wieniec': case 'hasta': case 'tarcza_rzymska':
+          if (target) {
+            const ready = !target.hiddenBy && !target.stuns.length && target.attacksUsed === 0 &&
+              (o.rules.allowFirstTurnAttacks || o.self.turnsTaken > 1);
+            result += card.cardId === 'tarcza_rzymska' ? 3 : (card.cardId === 'wieniec' ? 2.7 : 1.3) + (ready ? 3 : 0);
+          }
+          break;
         case 'panoramix': if (target) result += 2 + Math.min(2, stats(target, o.self.board, catalog).attack * 0.3); break;
         case 'ahigienix': result += o.opponent.board.filter(u => enemyCatalog[u.cardId].kind === 'unit').length * 1.8; break;
         case 'kociolek': result += o.self.board.filter(u => catalog[u.cardId].kind === 'unit').length * 2; break;

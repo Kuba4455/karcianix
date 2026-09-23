@@ -1,9 +1,9 @@
 {
   "name": "karcianix",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": true,
   "type": "module",
-  "description": "Deterministyczny symulator balansu talii Galów",
+  "description": "Deterministyczny symulator balansu talii Galów i Rzymian",
   "engines": {
     "node": ">=22.18.0"
   },

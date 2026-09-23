@@ -1,9 +1,9 @@
-import { CARD_IDS, createCatalog } from './cards.ts';
+import { CARD_IDS, DECKS, createCatalog } from './cards.ts';
 import { deriveSeed, Rng } from './rng.ts';
 import type {
   Action, CardDefinition, CardId, CardInstance, CardMetrics, Catalog, GameEvent,
   GameOptions, GameState, Metrics, Permanent, PlayerId, PlayerObservation, PlayerState,
-  PublicPlayer, Rules,
+  PublicPlayer, Rules, DeckId,
 } from './types.ts';
 
 export const DEFAULT_RULES: Readonly<Rules> = {
@@ -38,10 +38,10 @@ export function validateRules(rules: Rules): void {
 function event(s: GameState, item: Omit<GameEvent, 'turn'>): void {
   s.events?.push({ turn: s.turn, ...item });
 }
-function makePlayer(owner: PlayerId, rules: Rules, deckSeed: number): PlayerState {
-  const cards = CARD_IDS.flatMap(cardId => [0, 1, 2].map(copy => ({ cardId, uid: `p${owner}:${cardId}:${copy}` })));
+function makePlayer(owner: PlayerId, rules: Rules, deckSeed: number, deck: DeckId): PlayerState {
+  const cards = DECKS[deck].flatMap(cardId => [0, 1, 2].map(copy => ({ cardId, owner, uid: `p${owner}:${cardId}:${copy}` })));
   return { hp: rules.startingHp, maxEnergy: 0, energy: 0, energyCreated: false, turnsTaken: 0,
-    deck: new Rng(deckSeed).shuffle(cards), hand: [], board: [], discard: [], energyCards: [] };
+    deck: new Rng(deckSeed).shuffle(cards), hand: [], board: [], discard: [], energyCards: [], knownOpponentHand: [] };
 }
 export function createGame(options: GameOptions = {}): GameState {
   const seed = options.seed ?? 1;
@@ -51,10 +51,13 @@ export function createGame(options: GameOptions = {}): GameState {
   const rules = { ...DEFAULT_RULES, ...options.rules };
   validateRules(rules);
   const decks = options.deckSeeds ?? [deriveSeed(seed, 'deck:0'), deriveSeed(seed, 'deck:1')];
+  const deckIds = options.decks ?? ['galowie', 'galowie'];
+  if (deckIds.length !== 2 || deckIds.some(id => !Object.hasOwn(DECKS, id))) throw new Error('Nieznana talia');
   const s: GameState = {
+    decks: [...deckIds], randomEffects: 0,
     seed, firstPlayer: first, currentPlayer: first, turn: 1, actionsThisTurn: 0, rules,
     catalogs: options.catalogs ?? [createCatalog(), createCatalog()],
-    players: [makePlayer(0, rules, decks[0]), makePlayer(1, rules, decks[1])],
+    players: [makePlayer(0, rules, decks[0], deckIds[0]), makePlayer(1, rules, decks[1], deckIds[1])],
     metrics: [emptyMetrics(), emptyMetrics()], outcome: null, events: options.trace ? [] : null,
   };
   draw(s, 0, rules.openingHand);
@@ -79,6 +82,9 @@ export function combatBonus(def: CardDefinition, against: CardDefinition): numbe
   return 0;
 }
 export function protectedUnit(s: GameState, owner: PlayerId, unit: Permanent): boolean {
+  if (unit.hiddenBy) return true;
+  if (unit.cardId === 'cezar' && s.catalogs[owner][unit.cardId].abilityEnabled &&
+    s.players[owner].board.some(u => u.uid !== unit.uid && s.catalogs[owner][u.cardId].kind === 'unit')) return true;
   if (!unit.protectedBy || !s.catalogs[owner][unit.cardId].abilityEnabled) return false;
   return s.players[owner].board.some(x => x.uid === unit.protectedBy &&
     x.modifiers.some(m => m.sourceUid === unit.uid && m.origin === 'panoramix'));
@@ -91,7 +97,7 @@ export function sweepDeaths(s: GameState): void {
     if (dead.length === 0) break;
     const ids = new Set(dead.map(x => x.u.uid));
     for (const { u, owner } of dead) {
-      s.players[owner].discard.push({ uid: u.uid, cardId: u.cardId });
+      discard(s, owner, u);
       event(s, { type: 'death', player: owner, cardId: u.cardId, uid: u.uid });
     }
     for (const p of s.players) p.board = p.board.filter(u => !ids.has(u.uid));
@@ -100,9 +106,16 @@ export function sweepDeaths(s: GameState): void {
       if (u.protectedBy && ids.has(u.protectedBy)) delete u.protectedBy;
     }
   }
+  // Shelter is tied to a live Colosseum controlled by the same player.
+  for (const p of s.players) for (const u of p.board) {
+    if (u.hiddenBy && !p.board.some(x => x.uid === u.hiddenBy)) delete u.hiddenBy;
+  }
   const deadPlayers = s.players.map(p => p.hp <= 0);
   if (deadPlayers[0] && deadPlayers[1]) s.outcome = { kind: 'draw', reason: 'simultaneous-hp' };
   else if (deadPlayers[0] || deadPlayers[1]) s.outcome = { kind: 'win', winner: deadPlayers[0] ? 1 : 0, reason: 'hp' };
+}
+function discard(s: GameState, controller: PlayerId, card: CardInstance): void {
+  s.players[card.owner ?? controller].discard.push({ uid: card.uid, cardId: card.cardId, owner: card.owner ?? controller });
 }
 function draw(s: GameState, owner: PlayerId, count: number): void {
   for (let i = 0; i < count; i++) {
@@ -150,6 +163,11 @@ function startTurn(s: GameState): void {
   for (const side of s.players) for (const u of side.board) {
     u.stuns = u.stuns.filter(e => e.sourceOwner !== owner || e.expiresAtOwnerTurn > p.turnsTaken);
   }
+  for (const side of s.players) for (const u of side.board) {
+    const expiring = u.temporaryDamage?.filter(d => d.owner === owner && d.expiresAtOwnerTurn <= p.turnsTaken) ?? [];
+    u.damage = Math.max(0, u.damage - expiring.reduce((sum, d) => sum + d.amount, 0));
+    if (u.temporaryDamage) u.temporaryDamage = u.temporaryDamage.filter(d => !expiring.includes(d));
+  }
   for (const u of p.board) u.attacksUsed = 0;
   event(s, { type: 'turn-start', player: owner });
   const enemy = other(owner);
@@ -172,6 +190,16 @@ function endTurn(s: GameState): void {
     for (let i = 0; i < count; i++) u.modifiers.push({ origin: 'magiczny_napoj', attack: -1, health: -1 });
   }
   sweepDeaths(s);
+  // Return surviving borrowed units before the opponent's start-of-turn effects.
+  for (const owner of [0, 1] as const) {
+    for (const u of [...s.players[owner].board]) if (u.borrowedFrom !== undefined) {
+      s.players[owner].board = s.players[owner].board.filter(x => x.uid !== u.uid);
+      s.players[u.borrowedFrom].board.push(u);
+      delete u.borrowedFrom;
+      delete u.hiddenBy;
+    }
+  }
+  sweepDeaths(s);
   if (s.outcome) return;
   if (s.turn >= s.rules.maxTurns) {
     s.outcome = { kind: 'truncated', reason: 'turn-limit' };
@@ -190,7 +218,12 @@ function playActions(s: GameState, card: CardInstance): Action[] {
   const base = { type: 'playCard' as const, cardUid: card.uid };
   if (!def.abilityEnabled) return [base];
   const units = self.board.filter(u => s.catalogs[owner][u.cardId].kind === 'unit');
-  if (['miecz', 'tarcza', 'sierp', 'magiczny_napoj'].includes(card.cardId)) return units.map(u => ({ ...base, targetUid: u.uid }));
+  if (['miecz', 'tarcza', 'sierp', 'magiczny_napoj', 'wieniec', 'hasta', 'tarcza_rzymska'].includes(card.cardId)) return units.map(u => ({ ...base, targetUid: u.uid }));
+  if (card.cardId === 'a38') return enemy.board.filter(u => s.catalogs[other(owner)][u.cardId].kind === 'unit').map(u => ({ ...base, targetUid: u.uid }));
+  if (card.cardId === 'oszczep') return enemy.board.map(u => ({ ...base, targetUid: u.uid }));
+  if (card.cardId === 'kodeks') return self.hand.filter(c => c.uid !== card.uid).map(c => ({ ...base, discardUid: c.uid }));
+  if (card.cardId === 'kalimatis') return [{ ...base, choice: 'peek' }, { ...base, choice: 'steal' }];
+  if (card.cardId === 'antywirus') return Array.from({ length: self.hand.filter(c => c.cardId === 'legionista').length + 1 }, (_, summonCount) => ({ ...base, summonCount }));
   if (card.cardId === 'panoramix' && units.length) return units.map(u => ({ ...base, targetUid: u.uid }));
   if (card.cardId === 'asparanoix' && enemy.board.length) return enemy.board.flatMap(u =>
     (['both', 'attack', 'health'] as const).map(debuff => ({ ...base, targetUid: u.uid, debuff })));
@@ -214,6 +247,16 @@ export function getLegalActions(s: GameState): Action[] {
   }
   for (const u of self.board) {
     const def = s.catalogs[owner][u.cardId];
+    if (u.hiddenBy) actions.push({ type: 'unhide', targetUid: u.uid });
+    if (def.abilityEnabled && u.cardId === 'brutus') for (const target of self.board) {
+      if (target.uid !== u.uid && target.borrowedFrom === undefined && s.catalogs[owner][target.cardId].kind === 'unit')
+        actions.push({ type: 'sacrifice', sourceUid: u.uid, targetUid: target.uid });
+    }
+    if (def.abilityEnabled && u.cardId === 'koloseum' && self.energy >= 2) for (const target of self.board) {
+      if (target.uid !== u.uid && !target.hiddenBy && s.catalogs[owner][target.cardId].kind === 'unit')
+        actions.push({ type: 'hide', sourceUid: u.uid, targetUid: target.uid });
+    }
+    if (u.hiddenBy || (def.abilityEnabled && ['ceplus', 'lew'].includes(u.cardId) && u.enteredTurn === s.turn)) continue;
     if (u.stuns.length) continue;
     if (def.kind !== 'unit' || u.attacksUsed > 0) continue;
     if (!s.rules.allowFirstTurnAttacks && self.turnsTaken === 1) continue;
@@ -245,13 +288,55 @@ function play(s: GameState, action: Extract<Action, { type: 'playCard' }>): void
   let summoned: Permanent | undefined;
   if (def.kind === 'unit' || def.kind === 'building') {
     summoned = makePermanent(card);
+    summoned.enteredTurn = s.turn;
     self.board.push(summoned);
-  } else self.discard.push(card);
+  } else discard(s, owner, card);
   event(s, { type: 'play', player: owner, cardId: card.cardId, uid: card.uid, targetUid: action.targetUid });
   if (!def.abilityEnabled) return;
   const ownTarget = self.board.find(u => u.uid === action.targetUid);
   const enemyTarget = s.players[other(owner)].board.find(u => u.uid === action.targetUid);
   switch (card.cardId) {
+    case 'antywirus':
+      for (let i = 0; i < (action.summonCount ?? 0); i++) {
+        const index = self.hand.findIndex(c => c.cardId === 'legionista');
+        const legion = self.hand.splice(index, 1)[0];
+        self.board.push({ ...makePermanent(legion), enteredTurn: s.turn });
+        s.metrics[owner].legionista.played++;
+        event(s, { type: 'summon', player: owner, cardId: legion.cardId, uid: legion.uid });
+      }
+      break;
+    case 'a38':
+      if (enemyTarget) {
+        s.players[other(owner)].board = s.players[other(owner)].board.filter(u => u.uid !== enemyTarget.uid);
+        enemyTarget.borrowedFrom = other(owner);
+        enemyTarget.attacksUsed = 0;
+        delete enemyTarget.hiddenBy;
+        delete enemyTarget.enteredTurn;
+        self.board.push(enemyTarget);
+      }
+      break;
+    case 'kalimatis': {
+      const enemy = s.players[other(owner)];
+      const rng = new Rng(deriveSeed(s.seed, `effect:${s.randomEffects++}`));
+      if (action.choice === 'steal' && enemy.hand.length) self.hand.push(enemy.hand.splice(rng.int(enemy.hand.length), 1)[0]);
+      else if (action.choice === 'peek') {
+        const revealed = rng.shuffle([...enemy.hand]).slice(0, 2);
+        self.knownOpponentHand = [...new Map([...self.knownOpponentHand, ...revealed].map(c => [c.uid, c])).values()];
+      }
+      break;
+    }
+    case 'kodeks': {
+      const index = self.hand.findIndex(c => c.uid === action.discardUid);
+      discard(s, owner, self.hand.splice(index, 1)[0]);
+      draw(s, owner, 2);
+      break;
+    }
+    case 'oszczep':
+      if (enemyTarget) {
+        unitDamage(s, owner, card.cardId, other(owner), enemyTarget, 2);
+        (enemyTarget.temporaryDamage ??= []).push({ amount: 2, owner: other(owner), expiresAtOwnerTurn: s.players[other(owner)].turnsTaken + 1 });
+      }
+      break;
     case 'panoramix':
       if (ownTarget && summoned) {
         ownTarget.modifiers.push({ origin: card.cardId, attack: 0, health: 2, sourceUid: card.uid });
@@ -264,9 +349,9 @@ function play(s: GameState, action: Extract<Action, { type: 'playCard' }>): void
         enemyTarget.modifiers.push({ origin: card.cardId, attack, health, sourceUid: card.uid });
       }
       break;
-    case 'miecz': case 'tarcza': case 'sierp': case 'magiczny_napoj':
+    case 'miecz': case 'tarcza': case 'sierp': case 'magiczny_napoj': case 'wieniec': case 'hasta': case 'tarcza_rzymska':
       if (ownTarget) {
-        const values = { miecz: [2, 0], tarcza: [0, 1], sierp: [1, 0], magiczny_napoj: [3, 3] };
+        const values = { miecz: [2, 0], tarcza: [0, 1], sierp: [1, 0], magiczny_napoj: [3, 3], wieniec: [2, 0], hasta: [1, 0], tarcza_rzymska: [0, 2] };
         const [attack, health] = values[card.cardId];
         ownTarget.modifiers.push({ origin: card.cardId, attack, health,
           ...(card.cardId === 'magiczny_napoj' ? { expiresAtTurn: s.turn } : {}) });
@@ -275,7 +360,16 @@ function play(s: GameState, action: Extract<Action, { type: 'playCard' }>): void
       break;
     case 'pieczony_dzik': {
       const amount = ownTarget ? Math.min(2, ownTarget.damage) : Math.min(2, s.rules.startingHp - self.hp);
-      if (ownTarget) ownTarget.damage -= amount;
+      if (ownTarget) {
+        ownTarget.damage -= amount;
+        // Healing consumes temporary wounds first, so expiry never heals older wounds twice.
+        let remaining = amount;
+        for (const wound of ownTarget.temporaryDamage ?? []) {
+          const healed = Math.min(wound.amount, remaining);
+          wound.amount -= healed;
+          remaining -= healed;
+        }
+      }
       else self.hp += amount;
       s.metrics[owner][card.cardId].healing += amount;
       break;
@@ -347,9 +441,28 @@ export function applyAction(s: GameState, action: Action): GameState {
       break;
     }
     case 'playCard': play(s, action); break;
+    case 'sacrifice': {
+      const source = self.board.find(u => u.uid === action.sourceUid)!;
+      const target = self.board.find(u => u.uid === action.targetUid)!;
+      source.modifiers.push({ origin: 'brutus', attack: 1, health: 1 });
+      target.damage = getStats(s, owner, target).maxHealth;
+      event(s, { type: 'sacrifice', player: owner, uid: source.uid, targetUid: target.uid });
+      sweepDeaths(s);
+      break;
+    }
+    case 'hide':
+      self.energy -= 2;
+      self.board.find(u => u.uid === action.targetUid)!.hiddenBy = action.sourceUid;
+      event(s, { type: 'hide', player: owner, uid: action.sourceUid, targetUid: action.targetUid });
+      break;
+    case 'unhide':
+      delete self.board.find(u => u.uid === action.targetUid)!.hiddenBy;
+      event(s, { type: 'unhide', player: owner, targetUid: action.targetUid });
+      break;
     case 'attack': attack(s, action); break;
     case 'endTurn': endTurn(s); break;
   }
+  for (const id of [0, 1] as const) s.players[id].knownOpponentHand = s.players[id].knownOpponentHand.filter(c => s.players[other(id)].hand.some(h => h.uid === c.uid));
   if (!s.outcome && s.actionsThisTurn >= s.rules.maxActionsPerTurn) s.outcome = { kind: 'truncated', reason: 'action-limit' };
   return s;
 }
@@ -359,19 +472,19 @@ export function observe(s: GameState, player: PlayerId = s.currentPlayer): Playe
     board: p.board, discard: p.discard, energyCards: p.energyCards });
   // Copy only allowed fields: no hidden cards, deck order, seed, metrics, or events.
   return structuredClone({ player, turn: s.turn, rules: s.rules, catalogs: s.catalogs,
-    self: { ...publicPlayer(s.players[player]), hand: s.players[player].hand, energyCreated: s.players[player].energyCreated },
+    self: { ...publicPlayer(s.players[player]), hand: s.players[player].hand, energyCreated: s.players[player].energyCreated, knownOpponentHand: s.players[player].knownOpponentHand },
     opponent: publicPlayer(s.players[other(player)]),
   });
 }
 /** Used by fuzz tests and optional simulation checks, not by the bot. */
 export function assertInvariants(s: GameState): void {
+  const all = s.players.flatMap(p => [...p.deck, ...p.hand, ...p.board, ...p.discard, ...p.energyCards]);
+  const expected = s.decks.flatMap((deck, owner) => DECKS[deck].flatMap(id => [0, 1, 2].map(copy => `p${owner}:${id}:${copy}`)));
+  if (all.length !== 120 || new Set(all.map(c => c.uid)).size !== 120 || expected.some(uid => !all.some(c => c.uid === uid))) throw new Error('Zgubiona lub zduplikowana karta');
   for (const owner of [0, 1] as const) {
     const p = s.players[owner];
     if (p.energy < 0 || p.energy > p.maxEnergy || p.maxEnergy > s.rules.maxEnergy || p.energyCards.length !== p.maxEnergy) throw new Error('Naruszenie energii');
     if (p.hp > s.rules.startingHp) throw new Error('Naruszenie limitu HP');
-    const cards = [...p.deck, ...p.hand, ...p.board, ...p.discard, ...p.energyCards];
-    if (cards.length !== 60 || new Set(cards.map(c => c.uid)).size !== 60) throw new Error('Zgubiona lub zduplikowana karta');
-    for (const id of CARD_IDS) if (cards.filter(c => c.cardId === id).length !== 3) throw new Error(`Nieprawidłowa liczba kart ${id}`);
     for (const u of p.board) if (getStats(s, owner, u).health <= 0 || u.damage < 0 || u.attacksUsed > 1) throw new Error('Nieprawidłowy stan jednostki');
   }
 }
