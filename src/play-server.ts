@@ -56,7 +56,7 @@ export function createPlayServer() {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
-  const port = Number(process.env.PORT ?? 3000);
+  const port = Number(process.env.PORT ?? 3111);
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('PORT musi być liczbą 1–65535.');
   const host = process.env.HOST ?? '127.0.0.1';
   const server = createPlayServer();
