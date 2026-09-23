@@ -7,7 +7,7 @@ import type {
 } from './types.ts';
 
 export const DEFAULT_RULES: Readonly<Rules> = {
-  startingHp: 12, openingHand: 6, drawPerTurn: 1, secondPlayerFirstDraw: 1, allowFirstTurnAttacks: false, maxEnergy: 10,
+  startingHp: 15, openingHand: 6, drawPerTurn: 1, secondPlayerFirstDraw: 1, allowFirstTurnAttacks: false, maxEnergy: 10,
   maxTurns: 200, maxActionsPerTurn: 200,
   poisonStacks: true, emptyDeck: 'loss', stunRetaliation: true,
 };
