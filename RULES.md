@@ -1,10 +1,12 @@
-# Zasady silnika — galowie-rzymianie-v10
+# Zasady silnika — galowie-rzymianie-v11
 
 Druga talia i zatwierdzone zdolności: [Rzymianie](ROMANS.md). Każdy gracz niezależnie wybiera Galów lub Rzymian; obie talie mają 60 kart (20 × 3).
 
 ## Ustalenia autora gry
 
 - Obaj gracze zaczynają z 15 HP i sześcioma kartami.
+- Przed pierwszą turą każdy kolejno może odrzucić dowolną liczbę kart startowych (także zero), dobiera do sześciu i ponownie tasuje pozostałą talię. Odrzucone karty trafiają na stos odrzuconych i nie wracają do tasowanej talii.
+- Obaj gracze mają od początku 1 dostępną energię i maksimum energii równe 1. Wymiana kart nie zużywa energii ani limitu akcji w turze.
 - Każdy ma osobną talię 60 kart: 20 rodzajów × trzy kopie.
 - W pierwszej rundzie rozpoczynający nie dobiera, a drugi gracz dobiera jedną kartę na początku swojej pierwszej tury. Od drugiej własnej tury obaj dobierają po jednej karcie.
 - Gęsi mają 1 ataku, 2 życia i kosztują 1 energię.
@@ -31,12 +33,12 @@ ustalenia autora. Ich zmiana może znacząco zmienić wyniki balansu.
 |---|---|
 | Tura i runda | Liczniki używają pojedynczych tur gracza; pierwszy gracz nie dobiera w pierwszej turze, drugi dobiera 1 |
 | Dobieranie | Drugi gracz obowiązkowo dobiera 1 w pierwszej własnej turze; od drugiej własnej tury obaj obowiązkowo po 1; dobrowolne jest tworzenie energii |
-| Start energii | 0; nowy zasób zwiększa jednocześnie maksimum i dostępną energię o 1 |
+| Start energii | 1 dostępnej i 1 maksimum bez przepalonej karty; nowy zasób zwiększa jednocześnie maksimum i dostępną energię o 1 |
 | Przepalona karta | Osobna strefa energii, nie ręka ani stos kart odrzuconych; bez późniejszego użycia |
 | Ataki | Zakaz tylko w pierwszej turze gracza rozpoczynającego; drugi gracz może zaatakować w pierwszej własnej turze; potem jedna deklaracja ataku każdej jednostki na własną turę; Asterix ma w niej do dwóch uderzeń |
 | Cel ataku | Dowolna legalna karta wrogiego pola; dopiero gdy całe pole jest puste, gracz |
 | Budowle | Kociołek i Palisada blokują gracza, ale nie atakują; trucizna i premie „jednostkom” ich nie obejmują |
-| Pole i ręka | Bez limitu rozmiaru, bez mulligana, bez reakcji podczas ruchu rywala |
+| Pole i ręka | Bez limitu rozmiaru i reakcji podczas ruchu rywala; wymiana wyłącznie przed pierwszą turą |
 | Życie | Statystyka obrony jest maksymalnym HP; bieżące HP = maksimum - trwałe obrażenia |
 | Zmiana maksimum | Premia do HP nie usuwa obrażeń; jej utrata może od razu zabić jednostkę |
 | Śmierć | Po każdej rozliczonej wymianie/efekcie wszystkie martwe karty usuwa się jednocześnie; następnie rozlicza utratę ich efektów do stabilnego stanu |
@@ -132,3 +134,5 @@ Wersja 0.6.0: Gęsi mają 1/2 za 1, Miecz kosztuje 2, Obelix kosztuje 5, Kakofon
 Wersja 0.8.0: Geriatrix ginie na końcu swojej tury bez względu na to, czy wykonał atak. Przeżywa własny atak, o ile nie otrzyma w nim śmiertelnych obrażeń. Kalimatis kosztuje 4, Gajusz Pięknus ma 2/4, Kodeks kosztuje 1; Cezarów nie chronią inni Cezarowie, a Koloseum nie chowa Koloseum. Historyczne raporty korzystają z wcześniejszej wersji silnika i nie są odtwarzane przez tę wersję.
 
 Wersja 0.10.0: przy `allowFirstTurnAttacks: false` zakaz ataków dotyczy tylko gracza rozpoczynającego w pierwszej turze całej gry; `true` pozwala również jemu atakować. Drugi gracz może atakować jednostkę albo gracza (jeśli pole przeciwnika jest puste) w swojej pierwszej turze.
+
+Wersja 0.11.0: startowa wymiana kart następuje najpierw u rozpoczynającego, potem u drugiego gracza. Drugi gracz dobiera dodatkową kartę dopiero po wymianie, na początku pierwszej własnej tury. `startingEnergy: 1` to startowe dostępne maksimum; tworzenie energii z karty nadal zwiększa maksimum i dostępny zasób o 1.

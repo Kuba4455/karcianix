@@ -1,10 +1,17 @@
 import { describe, expect, test } from 'vitest';
 import { DECKS, createCatalog } from '../src/cards.ts';
 import {
-  applyAction, createGame, getLegalActions, getStats, makePermanent, observe,
+  applyAction, createGame as createGameBase, getLegalActions, getStats, makePermanent, observe,
   playerTarget, sweepDeaths,
 } from '../src/engine.ts';
-import type { Action, CardId, GameState, Permanent, PlayerId } from '../src/types.ts';
+import type { Action, CardId, GameOptions, GameState, Permanent, PlayerId } from '../src/types.ts';
+
+function createGame(options: GameOptions = {}): GameState {
+  const s = createGameBase(options);
+  applyAction(s, { type: 'mulligan', cardUids: [] });
+  applyAction(s, { type: 'mulligan', cardUids: [] });
+  return s;
+}
 
 function scenario(): GameState {
   const s = createGame({ seed: 13, rules: { startingHp: 12 } });
@@ -49,6 +56,7 @@ describe('Podstawowe zasady', () => {
   test('domyślne zasady zachowują obecne 15 HP', () => {
     expect(createGame().rules).toMatchObject({
       startingHp: 15,
+      startingEnergy: 1,
       openingHand: 6,
       drawPerTurn: 1,
       secondPlayerFirstDraw: 1,
@@ -56,6 +64,34 @@ describe('Podstawowe zasady', () => {
       maxEnergy: 10,
       stunRetaliation: true,
     });
+  });
+  test.each([0, 1] as const)('wymiana startowa obu graczy, ponowne tasowanie i energia; zaczyna %s', firstPlayer => {
+    const s = createGameBase({ seed: 41, firstPlayer });
+    const initial = s.players[firstPlayer].hand.map(c => c.uid);
+    const oldDeck = s.players[firstPlayer].deck.map(c => c.uid);
+    expect(s.players.map(p => [p.energy, p.maxEnergy, p.hand.length])).toEqual([[1, 1, 6], [1, 1, 6]]);
+    expect(getLegalActions(s)).toEqual([{ type: 'mulligan', cardUids: [] }]);
+    expect(() => applyAction(s, { type: 'endTurn' })).toThrow('Nielegalny');
+    expect(() => applyAction(s, { type: 'mulligan', cardUids: [initial[0], initial[0]] })).toThrow('Nielegalny');
+    const discarded = initial.slice(0, 2);
+    applyAction(s, { type: 'mulligan', cardUids: discarded });
+    expect(s.currentPlayer).toBe(1 - firstPlayer);
+    expect(s.players[firstPlayer].hand).toHaveLength(6);
+    expect(s.players[firstPlayer].discard.map(c => c.uid)).toEqual(discarded);
+    expect(s.players[firstPlayer].hand.every(c => !discarded.includes(c.uid))).toBe(true);
+    expect(s.players[firstPlayer].deck).toHaveLength(52);
+    expect(s.players[firstPlayer].deck.map(c => c.uid)).not.toEqual(oldDeck.slice(2));
+    expect(s.players[firstPlayer].turnsTaken).toBe(0);
+    applyAction(s, { type: 'mulligan', cardUids: s.players[s.currentPlayer].hand.map(c => c.uid) });
+    expect(s.currentPlayer).toBe(firstPlayer);
+    expect(s.players[1 - firstPlayer].hand).toHaveLength(6);
+    expect(s.players[1 - firstPlayer].discard).toHaveLength(6);
+    expect(s.players[firstPlayer].turnsTaken).toBe(1);
+    expect(s.players[firstPlayer].energy).toBe(1);
+    end(s);
+    expect(s.players[1 - firstPlayer].hand).toHaveLength(7);
+    expect(s.players[1 - firstPlayer].energy).toBe(1);
+    expect(createGameBase({ seed: 41, firstPlayer }).players[firstPlayer].hand.map(c => c.uid)).toEqual(initial);
   });
   test.each([0, 1] as const)('tylko rozpoczynający nie atakuje w pierwszej własnej turze; zaczyna %s', firstPlayer => {
     const s = createGame({ firstPlayer });
@@ -134,13 +170,13 @@ describe('Podstawowe zasady', () => {
     const s = createGame();
     const card = s.players[0].hand[0];
     applyAction(s, { type: 'createEnergy', cardUid: card.uid });
-    expect(s.players[0].energy).toBe(1);
+    expect(s.players[0].energy).toBe(2);
     expect(s.players[0].hand).toHaveLength(5);
     expect(s.players[0].energyCards).toEqual([card]);
     expect(getLegalActions(s).some(a => a.type === 'createEnergy')).toBe(false);
     s.players[0].energy = 0;
     end(s); end(s);
-    expect(s.players[0].energy).toBe(1);
+    expect(s.players[0].energy).toBe(2);
     expect(getLegalActions(s).some(a => a.type === 'createEnergy')).toBe(true);
   });
   test('nie trzeba tworzyć energii, ale nie można przekroczyć 10', () => {

@@ -29,7 +29,7 @@ export class PlaySession {
   viewFor(player: PlayerId) {
     const s = this.game;
     if (!s || s.outcome || this.covered) throw new PlayError('Nie ma aktywnej tury.', 409);
-    const common = { revision: this.revision, decks: s.decks, observation: observe(s, player),
+    const common = { revision: this.revision, decks: s.decks, mulligan: s.pendingMulligan.some(Boolean), observation: observe(s, player),
       boardStats: Object.fromEntries(([0, 1] as const).flatMap(owner => s.players[owner].board.map(u =>
         [u.uid, { ...getStats(s, owner, u), protected: protectedUnit(s, owner, u) }]))) };
     if (s.currentPlayer !== player) return { ...common, phase: 'waiting-for-turn' as const, currentPlayer: s.currentPlayer };
@@ -62,13 +62,18 @@ export class PlaySession {
     return this.view();
   }
 
-  act(id: unknown, revision: unknown) {
+  act(id: unknown, revision: unknown, cardUids?: unknown) {
     this.checkRevision(revision);
     const s = this.game;
     if (!s || s.outcome || this.covered) throw new PlayError('Najpierw odsłoń swoją turę.');
     const actions = getLegalActions(s);
     if (!Number.isSafeInteger(id) || (id as number) < 0 || (id as number) >= actions.length) throw new PlayError('Nielegalny ruch.');
-    const action = actions[id as number];
+    const selected = actions[id as number];
+    if (selected.type === 'mulligan' && (!Array.isArray(cardUids) || cardUids.some(uid => typeof uid !== 'string') ||
+      new Set(cardUids).size !== cardUids.length || cardUids.some(uid => !s.players[s.currentPlayer].hand.some(card => card.uid === uid)))) {
+      throw new PlayError('Wybierz karty z własnej ręki bez powtórzeń.');
+    }
+    const action: Action = selected.type === 'mulligan' ? { type: 'mulligan', cardUids: cardUids as string[] } : selected;
     const owner = s.currentPlayer;
     const text = `Gracz ${owner + 1}: ${actionLabel(s, action)}`;
     applyAction(s, action);
@@ -95,6 +100,7 @@ function actionLabel(s: GameState, action: Action): string {
   const target = (uid: string) => uid === playerTarget(other(owner)) ? 'przeciwnik' :
     `${s.players[owner].board.some(u => u.uid === uid) ? 'własna' : 'wroga'} ${cardName(uid)}`;
   switch (action.type) {
+    case 'mulligan': return `Wymiana kart na start: ${action.cardUids.length}`;
     case 'endTurn': return 'Zakończ turę';
     case 'createEnergy': return `Zamień ${cardName(action.cardUid)} na energię (+1 maksimum i dostępnej energii)`;
     case 'attack': return `Atak: ${cardName(action.attackerUid)} → ${target(action.targetUid)}`;

@@ -47,7 +47,7 @@ export function createPlayServer() {
       if (!input || typeof input !== 'object' || Array.isArray(input)) throw new PlayError('Nieprawidłowe dane.');
       const result = path === '/api/create' ? rooms.create(input.deck) :
         path === '/api/join' ? rooms.join(input.code, input.deck) :
-        path === '/api/cancel' ? rooms.cancel(token) : rooms.act(token, input.id, input.revision);
+        path === '/api/cancel' ? rooms.cancel(token) : rooms.act(token, input.id, input.revision, input.cardUids);
       json(200, result);
     } catch (error) {
       json(error instanceof PlayError ? error.status : 500, { error: error instanceof PlayError ? error.message : 'Błąd serwera gry.' });

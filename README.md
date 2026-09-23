@@ -49,7 +49,7 @@ graczy w adresie URL ani nie udostępniaj profilu przeglądarki.
 założeń potrzebnych do uruchomienia symulacji. Szczególnie istotna jest robocza
 interpretacja warunkowego życia Falballi/Dobrominy, blokad i Spadającego nieba.
 
-## Aktualne zasady — wersja 0.10.0
+## Aktualne zasady — wersja 0.11.0
 
 Karty i szczegóły nowej talii: [ROMANS.md](ROMANS.md).
 Geriatrix umiera na końcu swojej tury, także gdy nie zaatakuje; po ataku może pozostać na polu do zakończenia tury.
@@ -57,6 +57,8 @@ Rzymianie: Kalimatis kosztuje 4, Gajusz Pięknus ma 2/4, a Kodeks kosztuje 1. Ce
 Przykład: `npm run simulate -- --games 1000 --decks galowie,rzymianie`.
 
 - Dostępne są dwie niezależne talie po 60 kart. Domyślnie obaj gracze używają Galów.
+- Przed grą obaj wybierają karty startowe do odrzucenia (lub zatrzymują wszystkie), dobierają do 6 i tasują pozostałą talię. Drugi gracz dobiera potem dodatkową kartę na początku swojej pierwszej tury.
+- Każdy zaczyna z 1 dostępną energią (i maksimum 1); zamiana karty na energię podnosi oba zasoby o 1.
 - Rzymianie dodają m.in. poświęcanie jednostek, darmowe przyzwanie Legionistów, przejęcie kontroli, podgląd/kradzież ręki i chowanie w Koloseum.
 - Lew i Gajusz Ceplus czekają z pierwszym atakiem do następnej własnej tury.
 

@@ -1,4 +1,8 @@
-# Status wersji 0.10.0
+# Status wersji 0.11.0
+
+Dodano wymianę kart przed pierwszą turą i 1 energię startową dla obu graczy. Weryfikacja: **109 testów zaliczonych**, kontrola typów TypeScript bez błędów. Dotychczasowe wyniki balansu są historyczne; nie przeprowadzono nowej serii po tych zmianach.
+
+## Historyczny status wersji 0.10.0
 
 W pierwszej turze tylko gracz rozpoczynający ma zakaz ataku; drugi gracz może atakować już w swojej pierwszej turze. Weryfikacja: **107 testów zaliczonych**, kontrola typów TypeScript bez błędów. Nie uruchomiono nowej serii do oceny balansu po tej zmianie. Poniższe wyniki 1000 gier dotyczą wcześniejszych zasad i nie opisują balansu wersji 0.10.0.
 

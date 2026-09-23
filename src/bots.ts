@@ -71,6 +71,7 @@ function score(o: PlayerObservation, action: Action, control: boolean): number {
   const catalog = o.catalogs[o.player];
   const enemyCatalog = o.catalogs[other(o.player)];
   switch (action.type) {
+    case 'mulligan': return 0;
     case 'endTurn': return 0;
     case 'sacrifice': {
       const target = o.self.board.find(u => u.uid === action.targetUid)!;
@@ -175,8 +176,20 @@ function score(o: PlayerObservation, action: Action, control: boolean): number {
 export function chooseAction(kind: BotKind, observation: PlayerObservation, actions: readonly Action[], rng: Rng,
   preview?: ActionPreview): Action {
   if (!actions.length) throw new Error('Bot nie ma legalnych akcji');
+  if (!['random', 'aggressive', 'control'].includes(kind)) throw new Error(`Nieznany bot: ${kind}`);
+  if (actions[0].type === 'mulligan') {
+    const catalog = observation.catalogs[observation.player];
+    const selected = observation.self.hand.filter(card => {
+      const def = catalog[card.cardId];
+      if (kind === 'random') return rng.next() < 0.35;
+      const copies = observation.self.hand.filter(other => other.cardId === card.cardId);
+      const duplicate = copies.findIndex(other => other.uid === card.uid) > 0;
+      return def.cost >= 5 || (def.cost >= 4 && duplicate) ||
+        (def.kind === 'equipment' && observation.self.hand.filter(c => catalog[c.cardId].kind === 'unit').length === 0);
+    });
+    return { type: 'mulligan', cardUids: selected.map(card => card.uid) };
+  }
   if (kind === 'random') return actions[rng.int(actions.length)];
-  if (kind !== 'aggressive' && kind !== 'control') throw new Error(`Nieznany bot: ${kind}`);
   const control = kind === 'control';
   const ranked = actions.map(action => ({ action, immediate: score(observation, action, control), planned: 0 }));
   for (const candidate of ranked) candidate.planned = candidate.immediate;

@@ -7,7 +7,7 @@ import type {
 } from './types.ts';
 
 export const DEFAULT_RULES: Readonly<Rules> = {
-  startingHp: 15, openingHand: 6, drawPerTurn: 1, secondPlayerFirstDraw: 1, allowFirstTurnAttacks: false, maxEnergy: 10,
+  startingHp: 15, startingEnergy: 1, openingHand: 6, drawPerTurn: 1, secondPlayerFirstDraw: 1, allowFirstTurnAttacks: false, maxEnergy: 10,
   maxTurns: 200, maxActionsPerTurn: 200,
   poisonStacks: true, emptyDeck: 'loss', stunRetaliation: true,
 };
@@ -29,6 +29,7 @@ export function validateRules(rules: Rules): void {
     if (!Number.isSafeInteger(rules[key]) || rules[key] < 1) throw new Error(`Nieprawidłowa zasada: ${key}`);
   }
   if (rules.openingHand > 60) throw new Error('Ręka startowa przekracza rozmiar talii');
+  if (!Number.isSafeInteger(rules.startingEnergy) || rules.startingEnergy < 0 || rules.startingEnergy > rules.maxEnergy) throw new Error('Nieprawidłowa zasada: startingEnergy');
   if (!Number.isSafeInteger(rules.secondPlayerFirstDraw) || rules.secondPlayerFirstDraw < 0) throw new Error('Nieprawidłowa zasada: secondPlayerFirstDraw');
   if (!['loss', 'skip'].includes(rules.emptyDeck)) throw new Error('Nieznana zasada pustej talii');
   if (typeof rules.poisonStacks !== 'boolean' || typeof rules.stunRetaliation !== 'boolean' || typeof rules.allowFirstTurnAttacks !== 'boolean') throw new Error('Nieprawidłowa zasada logiczna');
@@ -40,7 +41,7 @@ function event(s: GameState, item: Omit<GameEvent, 'turn'>): void {
 }
 function makePlayer(owner: PlayerId, rules: Rules, deckSeed: number, deck: DeckId): PlayerState {
   const cards = DECKS[deck].flatMap(cardId => [0, 1, 2].map(copy => ({ cardId, owner, uid: `p${owner}:${cardId}:${copy}` })));
-  return { hp: rules.startingHp, maxEnergy: 0, energy: 0, energyCreated: false, turnsTaken: 0,
+  return { hp: rules.startingHp, maxEnergy: rules.startingEnergy, energy: rules.startingEnergy, energyCreated: false, turnsTaken: 0,
     deck: new Rng(deckSeed).shuffle(cards), hand: [], board: [], discard: [], energyCards: [], knownOpponentHand: [] };
 }
 export function createGame(options: GameOptions = {}): GameState {
@@ -55,14 +56,13 @@ export function createGame(options: GameOptions = {}): GameState {
   if (deckIds.length !== 2 || deckIds.some(id => !Object.hasOwn(DECKS, id))) throw new Error('Nieznana talia');
   const s: GameState = {
     decks: [...deckIds], randomEffects: 0,
-    seed, firstPlayer: first, currentPlayer: first, turn: 1, actionsThisTurn: 0, rules,
+    seed, firstPlayer: first, currentPlayer: first, pendingMulligan: [true, true], turn: 1, actionsThisTurn: 0, rules,
     catalogs: options.catalogs ?? [createCatalog(), createCatalog()],
     players: [makePlayer(0, rules, decks[0], deckIds[0]), makePlayer(1, rules, decks[1], deckIds[1])],
     metrics: [emptyMetrics(), emptyMetrics()], outcome: null, events: options.trace ? [] : null,
   };
   draw(s, 0, rules.openingHand);
   draw(s, 1, rules.openingHand);
-  startTurn(s);
   return s;
 }
 export function stats(unit: Permanent, board: readonly Permanent[], catalog: Catalog) {
@@ -245,6 +245,7 @@ function playActions(s: GameState, card: CardInstance): Action[] {
 export function getLegalActions(s: GameState): Action[] {
   if (s.outcome) return [];
   const owner = s.currentPlayer;
+  if (s.pendingMulligan[owner]) return [{ type: 'mulligan', cardUids: [] }];
   const self = s.players[owner];
   const enemyOwner = other(owner);
   const enemy = s.players[enemyOwner];
@@ -430,11 +431,28 @@ function sameAction(a: Action, b: Action): boolean {
 }
 /** Mutates state in place for batch performance. Illegal moves are rejected before any mutation. */
 export function applyAction(s: GameState, action: Action): GameState {
-  if (!getLegalActions(s).some(legal => sameAction(legal, action))) throw new Error(`Nielegalny ruch: ${JSON.stringify(action)}`);
-  s.actionsThisTurn++;
+  const mulligan = !s.outcome && action.type === 'mulligan' && Object.keys(action).length === 2 && s.pendingMulligan[s.currentPlayer] &&
+    Array.isArray(action.cardUids) && action.cardUids.every(uid => typeof uid === 'string') &&
+    new Set(action.cardUids).size === action.cardUids.length &&
+    action.cardUids.every(uid => s.players[s.currentPlayer].hand.some(card => card.uid === uid));
+  if (!mulligan && !getLegalActions(s).some(legal => sameAction(legal, action))) throw new Error(`Nielegalny ruch: ${JSON.stringify(action)}`);
+  if (action.type !== 'mulligan') s.actionsThisTurn++;
   const owner = s.currentPlayer;
   const self = s.players[owner];
   switch (action.type) {
+    case 'mulligan': {
+      const rejected = new Set(action.cardUids);
+      for (const card of self.hand.filter(card => rejected.has(card.uid))) discard(s, owner, card);
+      self.hand = self.hand.filter(card => !rejected.has(card.uid));
+      draw(s, owner, s.rules.openingHand - self.hand.length);
+      self.deck = new Rng(deriveSeed(s.seed, `mulligan:${owner}`)).shuffle(self.deck);
+      s.pendingMulligan[owner] = false;
+      if (!s.outcome) {
+        if (s.pendingMulligan[other(owner)]) s.currentPlayer = other(owner);
+        else { s.currentPlayer = s.firstPlayer; startTurn(s); }
+      }
+      break;
+    }
     case 'createEnergy': {
       const idx = self.hand.findIndex(c => c.uid === action.cardUid);
       const card = self.hand.splice(idx, 1)[0];
@@ -470,7 +488,7 @@ export function applyAction(s: GameState, action: Action): GameState {
     case 'endTurn': endTurn(s); break;
   }
   for (const id of [0, 1] as const) s.players[id].knownOpponentHand = s.players[id].knownOpponentHand.filter(c => s.players[other(id)].hand.some(h => h.uid === c.uid));
-  if (!s.outcome && s.actionsThisTurn >= s.rules.maxActionsPerTurn) s.outcome = { kind: 'truncated', reason: 'action-limit' };
+  if (!s.outcome && action.type !== 'mulligan' && s.actionsThisTurn >= s.rules.maxActionsPerTurn) s.outcome = { kind: 'truncated', reason: 'action-limit' };
   return s;
 }
 export function observe(s: GameState, player: PlayerId = s.currentPlayer): PlayerObservation {
@@ -490,7 +508,7 @@ export function assertInvariants(s: GameState): void {
   if (all.length !== 120 || new Set(all.map(c => c.uid)).size !== 120 || expected.some(uid => !all.some(c => c.uid === uid))) throw new Error('Zgubiona lub zduplikowana karta');
   for (const owner of [0, 1] as const) {
     const p = s.players[owner];
-    if (p.energy < 0 || p.energy > p.maxEnergy || p.maxEnergy > s.rules.maxEnergy || p.energyCards.length !== p.maxEnergy) throw new Error('Naruszenie energii');
+    if (p.energy < 0 || p.energy > p.maxEnergy || p.maxEnergy > s.rules.maxEnergy || p.energyCards.length !== p.maxEnergy - s.rules.startingEnergy) throw new Error('Naruszenie energii');
     if (p.hp > s.rules.startingHp) throw new Error('Naruszenie limitu HP');
     for (const u of p.board) if (getStats(s, owner, u).health <= 0 || u.damage < 0 || u.attacksUsed > 1) throw new Error('Nieprawidłowy stan jednostki');
   }
