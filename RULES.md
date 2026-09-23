@@ -1,10 +1,10 @@
-# Zasady silnika — galowie-rzymianie-v8
+# Zasady silnika — galowie-rzymianie-v9
 
 Druga talia i zatwierdzone zdolności: [Rzymianie](ROMANS.md). Każdy gracz niezależnie wybiera Galów lub Rzymian; obie talie mają 60 kart (20 × 3).
 
 ## Ustalenia autora gry
 
-- Obaj gracze zaczynają z 12 HP i sześcioma kartami.
+- Obaj gracze zaczynają z 15 HP i sześcioma kartami.
 - Każdy ma osobną talię 60 kart: 20 rodzajów × trzy kopie.
 - W pierwszej rundzie rozpoczynający nie dobiera, a drugi gracz dobiera jedną kartę na początku swojej pierwszej tury. Od drugiej własnej tury obaj dobierają po jednej karcie.
 - Gęsi mają 1 ataku, 2 życia i kosztują 1 energię.
@@ -62,7 +62,7 @@ ustalenia autora. Ich zmiana może znacząco zmienić wyniki balansu.
 | `kakofonix` | Kakofonix | 2 / 1 | 3 | Jednorazowo przy wejściu blokuje obecne jednostki przeciwnika do początku następnej własnej tury |
 | `miecz` | Miecz | — | 2 | Stałe +2 ataku wybranej własnej jednostki |
 | `tarcza` | Tarcza | — | 1 | Stałe +1 maksymalnego HP wybranej własnej jednostki |
-| `magiczny_napoj` | Magiczny napój | — | 2 | +3/+3 wybranej własnej jednostce do końca bieżącej tury właściciela. Potem usuwa tę premię i nakłada stałe -1/-1. Każdy napój daje osobny kac |
+| `magiczny_napoj` | Magiczny napój | — | 2 | +3/+3 wybranej własnej jednostce przez turę zagrywającego i kolejną turę przeciwnika. Na początku następnej własnej tury zagrywającego usuwa premię i nakłada stałe -1/-1. Każdy napój daje osobny kac, nawet jeśli Spadające niebo usunęło premię wcześniej |
 | `kociolek` | Kociołek | 0 / 3 | 4 | Aura +1/+1 wszystkim własnym jednostkom, w tym później zagranym. Nie obejmuje budowli. Kilka kociołków sumuje się. Aura znika po zniszczeniu źródła |
 | `palisada` | Palisada | 0 / 1 | 0 | Blokuje atak gracza tak jak pozostałe karty pola; nie wymusza atakowania jej przed innymi kartami |
 | `dzik` | Dzik | 2 / 1 | 1 | Zwykła jednostka, bez męskiej płci dla premii bojowych |
@@ -106,7 +106,7 @@ zużywają jedną wspólną pulę, a nie odnawiają premię przed drugim uderzen
   Asparanoixa nadal mogą go dosięgnąć. Po usunięciu premii przez Spadające
   niebo znika również powiązana ochrona.
 - Spadające niebo pozostawia ujemne modyfikatory: osłabienia Asparanoixa i kac.
-  Usunięcie aktywnej premii napoju nie usuwa zobowiązania do kaca na koniec tury.
+  Usunięcie aktywnej premii napoju nie usuwa zobowiązania do kaca na początku następnej własnej tury.
 - Wrodzone zdolności Asterixa/Falballi/Dobrominy nie są dodatnim modyfikatorem
   i nie znikają po Spadającym niebie.
 - Wyłączenie zdolności w eksperymencie (`abilityEnabled: false`) wyłącza

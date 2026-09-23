@@ -30,7 +30,7 @@ Opcjonalna zmienna środowiskowa `PORT` zmienia port serwera (domyślnie 3000).
 założeń potrzebnych do uruchomienia symulacji. Szczególnie istotna jest robocza
 interpretacja warunkowego życia Falballi/Dobrominy, blokad i Spadającego nieba.
 
-## Aktualne zasady — wersja 0.8.0
+## Aktualne zasady — wersja 0.9.0
 
 Karty i szczegóły nowej talii: [ROMANS.md](ROMANS.md).
 Geriatrix umiera na końcu swojej tury, także gdy nie zaatakuje; po ataku może pozostać na polu do zakończenia tury.
@@ -41,7 +41,7 @@ Przykład: `npm run simulate -- --games 1000 --decks galowie,rzymianie`.
 - Rzymianie dodają m.in. poświęcanie jednostek, darmowe przyzwanie Legionistów, przejęcie kontroli, podgląd/kradzież ręki i chowanie w Koloseum.
 - Lew i Gajusz Ceplus czekają z pierwszym atakiem do następnej własnej tury.
 
-- Obaj gracze zaczynają z **12 HP**, leczenie gracza nie przekracza 12 HP.
+- Obaj gracze zaczynają z **15 HP**, leczenie gracza nie przekracza 15 HP.
 - Spadające niebo kosztuje **3 energii**.
 - Gęsi mają **1/2 za 1**, Miecz kosztuje **2**, Obelix kosztuje **5**, a Kakofonix ma **2/1 za 3**.
 - W pierwszej własnej turze obu graczy nie można deklarować żadnego ataku. Można tworzyć energię i zagrywać karty. Od drugiej własnej tury jednostki, także nowo zagrane, mogą normalnie atakować.
@@ -78,7 +78,7 @@ wykonuje osobno `npm run typecheck`. Dokumentacja:
 
 ## Co jest gotowe
 
-- Wszystkie 40 rodzajów kart i ich zdolności, 12 HP, 6 kart początkowych, dobieranie,
+- Wszystkie 40 rodzajów kart i ich zdolności, 15 HP, 6 kart początkowych, dobieranie,
   odnawialna energia, legalne ruchy i jednoczesne obrażenia.
 - Bot losowy, agresywny i kontrolny. Dwa ostatnie łączą heurystyki z podglądem
   najlepszego następnego ruchu w tej samej turze, dzięki czemu rozpoznają krótkie combo.

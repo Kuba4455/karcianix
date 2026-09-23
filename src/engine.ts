@@ -164,10 +164,18 @@ function startTurn(s: GameState): void {
     u.stuns = u.stuns.filter(e => e.sourceOwner !== owner || e.expiresAtOwnerTurn > p.turnsTaken);
   }
   for (const side of s.players) for (const u of side.board) {
+    const expiring = u.potions.filter(e => e.sourceOwner === owner && e.expiresAtOwnerTurn <= p.turnsTaken);
+    u.potions = u.potions.filter(e => !expiring.includes(e));
+    u.modifiers = u.modifiers.filter(m => m.expiresAtOwnerTurn === undefined || m.sourceOwner !== owner || m.expiresAtOwnerTurn > p.turnsTaken);
+    for (const _ of expiring) u.modifiers.push({ origin: 'magiczny_napoj', attack: -1, health: -1 });
+  }
+  for (const side of s.players) for (const u of side.board) {
     const expiring = u.temporaryDamage?.filter(d => d.owner === owner && d.expiresAtOwnerTurn <= p.turnsTaken) ?? [];
     u.damage = Math.max(0, u.damage - expiring.reduce((sum, d) => sum + d.amount, 0));
     if (u.temporaryDamage) u.temporaryDamage = u.temporaryDamage.filter(d => !expiring.includes(d));
   }
+  sweepDeaths(s);
+  if (s.outcome) return;
   for (const u of p.board) u.attacksUsed = 0;
   event(s, { type: 'turn-start', player: owner });
   const enemy = other(owner);
@@ -183,13 +191,6 @@ function startTurn(s: GameState): void {
   }
 }
 function endTurn(s: GameState): void {
-  for (const p of s.players) for (const u of p.board) {
-    u.modifiers = u.modifiers.filter(m => m.expiresAtTurn !== s.turn);
-    const count = u.potions.filter(m => m.expiresAtTurn === s.turn).length;
-    u.potions = u.potions.filter(m => m.expiresAtTurn !== s.turn);
-    for (let i = 0; i < count; i++) u.modifiers.push({ origin: 'magiczny_napoj', attack: -1, health: -1 });
-  }
-  sweepDeaths(s);
   // Geriatrix stays on the field through his attack and dies only when his
   // controller finishes the turn, whether he attacked or not.
   const owner = s.currentPlayer;
@@ -256,8 +257,8 @@ export function getLegalActions(s: GameState): Action[] {
     const def = s.catalogs[owner][u.cardId];
     if (u.hiddenBy) actions.push({ type: 'unhide', targetUid: u.uid });
     if (def.abilityEnabled && u.cardId === 'brutus') for (const target of self.board) {
-      if (target.uid !== u.uid && target.borrowedFrom === undefined && s.catalogs[owner][target.cardId].kind === 'unit')
-        actions.push({ type: 'sacrifice', sourceUid: u.uid, targetUid: target.uid });
+      if (target.uid !== u.uid && target.attacksUsed === 0 && s.catalogs[owner][target.cardId].kind === 'unit')
+        for (const bonus of ['attack', 'health', 'both'] as const) actions.push({ type: 'sacrifice', sourceUid: u.uid, targetUid: target.uid, bonus });
     }
     if (def.abilityEnabled && u.cardId === 'koloseum' && self.energy >= 2) for (const target of self.board) {
       if (target.uid !== u.uid && target.cardId !== 'koloseum' && !target.hiddenBy && s.catalogs[owner][target.cardId].kind === 'unit')
@@ -360,9 +361,10 @@ function play(s: GameState, action: Extract<Action, { type: 'playCard' }>): void
       if (ownTarget) {
         const values = { miecz: [2, 0], tarcza: [0, 1], sierp: [1, 0], magiczny_napoj: [3, 3], wieniec: [2, 0], hasta: [1, 0], tarcza_rzymska: [0, 2] };
         const [attack, health] = values[card.cardId];
+        const expiry = { sourceOwner: owner, expiresAtOwnerTurn: self.turnsTaken + 1 };
         ownTarget.modifiers.push({ origin: card.cardId, attack, health,
-          ...(card.cardId === 'magiczny_napoj' ? { expiresAtTurn: s.turn } : {}) });
-        if (card.cardId === 'magiczny_napoj') ownTarget.potions.push({ expiresAtTurn: s.turn });
+          ...(card.cardId === 'magiczny_napoj' ? expiry : {}) });
+        if (card.cardId === 'magiczny_napoj') ownTarget.potions.push(expiry);
       }
       break;
     case 'pieczony_dzik': {
@@ -448,7 +450,8 @@ export function applyAction(s: GameState, action: Action): GameState {
     case 'sacrifice': {
       const source = self.board.find(u => u.uid === action.sourceUid)!;
       const target = self.board.find(u => u.uid === action.targetUid)!;
-      source.modifiers.push({ origin: 'brutus', attack: 1, health: 1 });
+      const [attack, health] = action.bonus === 'attack' ? [2, 0] : action.bonus === 'health' ? [0, 2] : [1, 1];
+      source.modifiers.push({ origin: 'brutus', attack, health });
       target.damage = getStats(s, owner, target).maxHealth;
       event(s, { type: 'sacrifice', player: owner, uid: source.uid, targetUid: target.uid });
       sweepDeaths(s);

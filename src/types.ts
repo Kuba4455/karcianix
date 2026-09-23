@@ -29,7 +29,8 @@ export interface Modifier {
   attack: number;
   health: number;
   sourceUid?: string;
-  expiresAtTurn?: number;
+  expiresAtOwnerTurn?: number;
+  sourceOwner?: PlayerId;
 }
 export interface Permanent extends CardInstance {
   enteredTurn?: number;
@@ -44,7 +45,7 @@ export interface Permanent extends CardInstance {
   protectedBy?: string;
   auraActive: boolean;
   // Separate from modifiers: dispelling a potion does not cancel its hangover.
-  potions: { expiresAtTurn: number }[];
+  potions: { sourceOwner: PlayerId; expiresAtOwnerTurn: number }[];
   stuns: { sourceOwner: PlayerId; expiresAtOwnerTurn: number }[];
 }
 export interface PlayerState {
@@ -76,7 +77,7 @@ export interface Rules {
 export type Action =
   | { type: 'createEnergy'; cardUid: string }
   | { type: 'playCard'; cardUid: string; targetUid?: string; debuff?: Debuff; choice?: 'peek' | 'steal'; discardUid?: string; summonCount?: number }
-  | { type: 'sacrifice'; sourceUid: string; targetUid: string }
+  | { type: 'sacrifice'; sourceUid: string; targetUid: string; bonus: Debuff }
   | { type: 'hide'; sourceUid: string; targetUid: string }
   | { type: 'unhide'; targetUid: string }
   | { type: 'attack'; attackerUid: string; targetUid: string }

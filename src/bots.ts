@@ -74,7 +74,15 @@ function score(o: PlayerObservation, action: Action, control: boolean): number {
     case 'endTurn': return 0;
     case 'sacrifice': {
       const target = o.self.board.find(u => u.uid === action.targetUid)!;
-      return 3.5 - boardValue(o, target, true, control) - (target.attacksUsed === 0 ? 1 : 0);
+      const source = o.self.board.find(u => u.uid === action.sourceUid)!;
+      const st = stats(source, o.self.board, catalog);
+      const extraAttack = action.bonus === 'health' ? 0 : action.bonus === 'attack' ? 2 : 1;
+      const extraHealth = action.bonus === 'attack' ? 0 : action.bonus === 'health' ? 2 : 1;
+      const gain = value(catalog[source.cardId], st.attack + extraAttack, st.health + extraHealth, control) -
+        value(catalog[source.cardId], st.attack, st.health, control);
+      // A borrowed unit would leave at end of turn anyway and its death weakens the opponent.
+      return gain * 1.3 + (target.borrowedFrom === undefined ? -boardValue(o, target, true, control) * 0.7 :
+        boardValue(o, target, true, control) * 0.6 + 3);
     }
     case 'hide': {
       const target = o.self.board.find(u => u.uid === action.targetUid)!;

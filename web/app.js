@@ -63,7 +63,7 @@ function rules(parent) {
   const details = el('details'); details.append(el('summary', 'Jak grać?'));
   const list = el('ul');
   for (const line of [
-    'Start: 12 HP, 6 kart. Drugi gracz dobiera dodatkowo 1 kartę w pierwszej turze. Później każdy dobiera 1.',
+    'Start: 15 HP, 6 kart. Drugi gracz dobiera dodatkowo 1 kartę w pierwszej turze. Później każdy dobiera 1.',
     'Raz na turę możesz zamienić kartę z ręki na energię. Zwiększa to maksimum i dostępną energię o 1, do limitu 10. Energia odnawia się co turę.',
     'Na karcie w ręce wybierz „Zagraj…” i cel albo zamianę na energię. Zapłacisz podany koszt. Widać tylko legalne ruchy.',
     'Na własnej jednostce wybierz cel ataku lub zdolność. Przeciwnika można zaatakować dopiero po opróżnieniu jego pola.',

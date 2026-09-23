@@ -7,7 +7,7 @@ import {
 import type { Action, CardId, GameState, Permanent, PlayerId } from '../src/types.ts';
 
 function scenario(): GameState {
-  const s = createGame({ seed: 13 });
+  const s = createGame({ seed: 13, rules: { startingHp: 12 } });
   // General combat scenarios take place after the protected opening round.
   s.turn = 3;
   s.players[0].turnsTaken = 2;
@@ -46,9 +46,9 @@ const hit = (s: GameState, attacker: Permanent, defender: Permanent | string) =>
 });
 
 describe('Podstawowe zasady', () => {
-  test('domyślne zasady odpowiadają wersji galowie-v6', () => {
+  test('domyślne zasady zachowują obecne 15 HP', () => {
     expect(createGame().rules).toMatchObject({
-      startingHp: 12,
+      startingHp: 15,
       openingHand: 6,
       drawPerTurn: 1,
       secondPlayerFirstDraw: 1,
@@ -71,16 +71,16 @@ describe('Podstawowe zasady', () => {
       if (turn === 1) expect(() => hit(s, g, units[0])).toThrow('Nielegalny');
       end(s);
     }
-    expect(s.players.map(p => p.hp)).toEqual([12, 12]);
+    expect(s.players.map(p => p.hp)).toEqual([15, 15]);
     expect(getLegalActions(s)).toContainEqual({ type: 'attack', attackerUid: units[0].uid, targetUid: units[1].uid });
     end(s);
     expect(getLegalActions(s)).toContainEqual({ type: 'attack', attackerUid: units[1].uid, targetUid: units[0].uid });
   });
-  test('20 rodzajów kart, po 3 kopie w każdej osobnej talii, 6 kart i 12 HP na start', () => {
+  test('20 rodzajów kart, po 3 kopie w każdej osobnej talii, 6 kart i 15 HP na start', () => {
     const s = createGame({ seed: 7 });
     expect(DECKS.galowie).toHaveLength(20);
     for (const p of s.players) {
-      expect(p.hp).toBe(12);
+      expect(p.hp).toBe(15);
       expect(p.hand).toHaveLength(6);
       expect(p.deck).toHaveLength(54);
       for (const id of DECKS.galowie) expect([...p.hand, ...p.deck].filter(c => c.cardId === id)).toHaveLength(3);
@@ -440,21 +440,36 @@ describe('Wzmocnienia i czary', () => {
     end(s); end(s);
     expect(getStats(s, 0, u)).toEqual({ attack, health, maxHealth: health });
   });
-  test('napój +3/+3 do końca tury, potem stałe -1/-1', () => {
+  test('napój +3/+3 trwa przez odpowiedź przeciwnika; kac wchodzi na początku następnej własnej tury', () => {
     const s = scenario();
     const a = unit(s, 0, 'obelix');
     play(s, 'magiczny_napoj', a.uid);
     expect(getStats(s, 0, a).attack).toBe(8);
     end(s);
+    expect(getStats(s, 0, a)).toEqual({ attack: 8, health: 8, maxHealth: 8 });
+    end(s);
     expect(getStats(s, 0, a)).toEqual({ attack: 4, health: 4, maxHealth: 4 });
     end(s); end(s);
     expect(getStats(s, 0, a).attack).toBe(4);
   });
-  test('dwa napoje oznaczają dwa kace; spadek życia może zabić', () => {
+  test('premia życia z napoju działa w walce podczas odpowiedzi przeciwnika', () => {
+    const s = scenario();
+    const protectedUnit = unit(s, 0, 'obelix');
+    play(s, 'magiczny_napoj', protectedUnit.uid);
+    end(s);
+    const enemy = unit(s, 1, 'dzik');
+    hit(s, enemy, protectedUnit);
+    expect(getStats(s, 0, protectedUnit)).toMatchObject({ attack: 8, health: 6, maxHealth: 8 });
+    end(s);
+    expect(getStats(s, 0, protectedUnit)).toMatchObject({ attack: 4, health: 2, maxHealth: 4 });
+  });
+  test('dwa napoje oznaczają dwa kace na początku kolejnej własnej tury; spadek życia może zabić', () => {
     const s = scenario();
     const a = unit(s, 0, 'dzik');
     play(s, 'magiczny_napoj', a.uid);
     play(s, 'magiczny_napoj', a.uid);
+    expect(getStats(s, 0, a).maxHealth).toBe(7);
+    end(s);
     expect(getStats(s, 0, a).maxHealth).toBe(7);
     end(s);
     expect(s.players[0].board).toHaveLength(0);
@@ -470,6 +485,8 @@ describe('Wzmocnienia i czary', () => {
     expect(k.auraActive).toBe(false);
     expect(getStats(s, 0, own).attack).toBe(5);
     expect(getStats(s, 1, enemy).attack).toBe(4);
+    end(s);
+    expect(getStats(s, 0, own).attack).toBe(5);
     end(s);
     expect(getStats(s, 0, own).attack).toBe(4);
   });
