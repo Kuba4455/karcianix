@@ -1,11 +1,18 @@
 import { describe, expect, test } from 'vitest';
 import { DECKS, createCatalog } from '../src/cards.ts';
-import { applyAction, assertInvariants, createGame, getLegalActions, getStats, makePermanent, observe, protectedUnit, sweepDeaths } from '../src/engine.ts';
+import { applyAction, assertInvariants, createGame as createGameBase, getLegalActions, getStats, makePermanent, observe, protectedUnit, sweepDeaths } from '../src/engine.ts';
 import { chooseAction } from '../src/bots.ts';
 import { Rng } from '../src/rng.ts';
 import { createActionPreview, runGame } from '../src/simulate.ts';
 import { runExperiment } from '../src/experiments.ts';
-import type { Action, CardId, GameState, PlayerId } from '../src/types.ts';
+import type { Action, CardId, GameOptions, GameState, PlayerId } from '../src/types.ts';
+
+function createGame(options: GameOptions = {}): GameState {
+  const s = createGameBase(options);
+  applyAction(s, { type: 'mulligan', cardUids: [] });
+  applyAction(s, { type: 'mulligan', cardUids: [] });
+  return s;
+}
 
 function scenario(gauls = false) {
   const s = createGame({ seed: 13, decks: ['rzymianie', gauls ? 'galowie' : 'rzymianie'] });

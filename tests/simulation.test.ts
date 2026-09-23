@@ -1,12 +1,19 @@
 import { describe, expect, test } from 'vitest';
 import { createCatalog } from '../src/cards.ts';
-import { applyAction, createGame, getLegalActions, makePermanent, observe } from '../src/engine.ts';
+import { applyAction, createGame as createGameBase, getLegalActions, makePermanent, observe } from '../src/engine.ts';
 import { pairedInterval, runExperiment, summarizePairs } from '../src/experiments.ts';
 import { chooseAction } from '../src/bots.ts';
 import { deriveSeed, Rng } from '../src/rng.ts';
 import { createActionPreview, runGame, runSimulation, scoreFor } from '../src/simulate.ts';
 import { main } from '../src/cli.ts';
-import type { BotKind } from '../src/types.ts';
+import type { BotKind, GameOptions, GameState } from '../src/types.ts';
+
+function createGame(options: GameOptions = {}): GameState {
+  const s = createGameBase(options);
+  applyAction(s, { type: 'mulligan', cardUids: [] });
+  applyAction(s, { type: 'mulligan', cardUids: [] });
+  return s;
+}
 
 describe('Reprodukowalność i izolacja', () => {
   test('ten sam seed daje tę samą pełną partię i ślad zdarzeń', () => {

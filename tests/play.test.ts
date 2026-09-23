@@ -4,13 +4,26 @@ import { PlaySession } from '../src/play-session.ts';
 import { chooseAction } from '../src/bots.ts';
 import { Rng } from '../src/rng.ts';
 
+function beginTurns(session: PlaySession) {
+  for (let i = 0; i < 2; i++) {
+    const covered = session.view();
+    if (covered.phase !== 'handoff') throw new Error('Oczekiwano zasłony');
+    const reveal = session.reveal(covered.revision);
+    if (reveal.phase !== 'playing') throw new Error('Oczekiwano wymiany');
+    session.act(reveal.actions[0].id, reveal.revision, []);
+  }
+  const covered = session.view();
+  if (covered.phase !== 'handoff') throw new Error('Oczekiwano pierwszej tury');
+  return session.reveal(covered.revision);
+}
+
 describe('Gra lokalna 1 na 1', () => {
   test('zasłona nie udostępnia ręki, akcji ani historii; odsłonięcie pokazuje tylko własną rękę', () => {
     const session = new PlaySession();
     const covered = session.start({ decks: ['galowie', 'rzymianie'], firstPlayer: 0, revision: 0 });
     expect(covered).toEqual({ phase: 'handoff', player: 0, turn: 1, decks: ['galowie', 'rzymianie'], revision: 1 });
     expect(() => session.act(0, 1)).toThrow('odsłoń');
-    const view = session.reveal(1);
+    const view = beginTurns(session);
     if (view.phase !== 'playing') throw new Error('Expected playing');
     expect(view.observation.self.hand).toHaveLength(6);
     expect(view.observation.opponent).not.toHaveProperty('hand');
@@ -32,7 +45,7 @@ describe('Gra lokalna 1 na 1', () => {
     expect(() => session.start({ decks: ['galowie', 'unknown'], firstPlayer: 0, revision: 0 })).toThrow();
     expect(() => session.start({ decks: ['galowie', 'rzymianie'], firstPlayer: 2, revision: 0 })).toThrow();
     session.start({ decks: ['rzymianie', 'rzymianie'], firstPlayer: 1, revision: 0 });
-    const view = session.reveal(1);
+    const view = beginTurns(session);
     if (view.phase !== 'playing') throw new Error('Expected playing');
     expect(() => session.act(-1, view.revision)).toThrow('Nielegalny');
     expect(() => session.act('0', view.revision)).toThrow('Nielegalny');
@@ -45,6 +58,7 @@ describe('Gra lokalna 1 na 1', () => {
   test.each([['galowie', 'rzymianie'], ['rzymianie', 'rzymianie']])('pełna gra przez interfejs sesji %s / %s', (a, b) => {
     const session = new PlaySession();
     let view = session.start({ decks: [a, b], firstPlayer: 0, revision: 0 });
+    view = beginTurns(session);
     const rng = new Rng(51);
     let steps = 0;
     while (view.phase !== 'finished' && steps++ < 2000) {
@@ -99,6 +113,24 @@ test('HTTP: dwa urządzenia, prywatne ręce, tury, osobne pokoje i ochrona przed
   const guest = await (await post('/api/join', { code: created.view.roomCode, deck: 'rzymianie' })).json();
   expect(guest.token).not.toBe(created.token);
   expect((await post('/api/join', { code: created.view.roomCode, deck: 'galowie' })).status).toBe(409);
+  for (let i = 0; i < 2; i++) {
+    const h = await (await get(created.token)).json();
+    const g = await (await get(guest.token)).json();
+    const turn = h.phase === 'playing' ? { token: created.token, view: h } : { token: guest.token, view: g };
+    expect(turn.view.mulligan).toBe(true);
+    const chosen = turn.view.actions[0];
+    expect(chosen.action.type).toBe('mulligan');
+    expect((await post('/api/action', { id: chosen.id, revision: turn.view.revision, cardUids: ['wrong'] }, turn.token)).status).toBe(400);
+    const selected = i === 0 ? turn.view.observation.self.hand.slice(0, 2).map((c: { uid: string }) => c.uid) : [];
+    const decision = await post('/api/action', { id: chosen.id, revision: turn.view.revision, cardUids: selected }, turn.token);
+    expect(decision.status).toBe(200);
+    const after = await decision.json();
+    expect(after.observation.self.hand).toHaveLength(6);
+    if (i === 0) {
+      expect(after.observation.self.discard.map((c: { uid: string }) => c.uid)).toEqual(selected);
+      expect(after.observation.self.hand.some((c: { uid: string }) => selected.includes(c.uid))).toBe(false);
+    }
+  }
   const hostView = await (await get(created.token)).json();
   const guestView = await (await get(guest.token)).json();
   const active = hostView.phase === 'playing' ? { token: created.token, view: hostView } : { token: guest.token, view: guestView };

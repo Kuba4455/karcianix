@@ -63,6 +63,7 @@ export interface PlayerState {
 }
 export interface Rules {
   startingHp: number;
+  startingEnergy: number;
   openingHand: number;
   drawPerTurn: number;
   secondPlayerFirstDraw: number;
@@ -75,6 +76,7 @@ export interface Rules {
   stunRetaliation: boolean;
 }
 export type Action =
+  | { type: 'mulligan'; cardUids: string[] }
   | { type: 'createEnergy'; cardUid: string }
   | { type: 'playCard'; cardUid: string; targetUid?: string; debuff?: Debuff; choice?: 'peek' | 'steal'; discardUid?: string; summonCount?: number }
   | { type: 'sacrifice'; sourceUid: string; targetUid: string; bonus: Debuff }
@@ -115,6 +117,7 @@ export interface GameState {
   seed: number;
   currentPlayer: PlayerId;
   firstPlayer: PlayerId;
+  pendingMulligan: [boolean, boolean];
   turn: number;
   actionsThisTurn: number;
   rules: Rules;

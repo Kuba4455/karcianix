@@ -77,7 +77,7 @@ function rules(parent) {
   const details = el('details'); details.append(el('summary', 'Jak grać?'));
   const list = el('ul');
   for (const line of [
-    'Start: 15 HP, 6 kart. Drugi gracz dobiera dodatkowo 1 kartę w pierwszej turze. Później każdy dobiera 1.',
+    'Start: 15 HP, 1 energia i 6 kart. Każdy może odrzucić dowolną liczbę kart, dobrać do 6 i ponownie tasuje pozostałą talię. Drugi gracz dobiera dodatkowo 1 kartę w swojej pierwszej turze.',
     'Raz na turę możesz zamienić kartę z ręki na energię. Zwiększa to maksimum i dostępną energię o 1, do limitu 10. Energia odnawia się co turę.',
     'Na karcie w ręce wybierz „Zagraj…” i cel albo zamianę na energię. Zapłacisz podany koszt. Widać tylko legalne ruchy.',
     'Na własnej jednostce wybierz cel ataku lub zdolność. Przeciwnika można zaatakować dopiero po opróżnieniu jego pola.',
@@ -95,6 +95,31 @@ function actionButtons(parent, entries) {
   parent.append(list);
 }
 function cardTitle(card, i, catalog) { return `${i + 1}. ${catalog[card.cardId].name}`; }
+function mulliganPanel() {
+  const o = view.observation;
+  const panel = el('section');
+  panel.append(el('h2', `Pokój ${view.roomCode} · Wymiana kart gracza ${o.player + 1}`),
+    el('p', 'Zaznacz karty do odrzucenia albo pozostaw wszystkie. Dobierzesz do sześciu kart, a pozostała talia zostanie ponownie potasowana.'));
+  const cards = el('div', undefined, 'cards');
+  const selected = new Set();
+  const confirm = button('Zatwierdź wymianę (0)', () => request('/api/action', {
+    id: view.actions.find(e => e.action.type === 'mulligan').id, revision: view.revision, cardUids: [...selected],
+  }), true);
+  for (const [i, card] of o.self.hand.entries()) {
+    const def = o.catalogs[o.player][card.cardId];
+    const article = el('article'); const label = el('label');
+    const checkbox = el('input'); checkbox.type = 'checkbox';
+    checkbox.addEventListener('change', () => {
+      if (checkbox.checked) selected.add(card.uid); else selected.delete(card.uid);
+      confirm.textContent = `Zatwierdź wymianę (${selected.size})`;
+    });
+    label.append(checkbox, document.createTextNode(` ${cardTitle(card, i, o.catalogs[o.player])} · koszt ${def.cost}`));
+    article.append(label);
+    if (def.text) article.append(el('p', def.text));
+    cards.append(article);
+  }
+  panel.append(cards, confirm); app.append(panel);
+}
 function board(parent, player, own, o) {
   const section = el('section'); section.append(el('h2', own ? 'Twoje pole' : 'Pole przeciwnika'));
   if (!player.board.length) section.append(el('p', 'Pole jest puste.'));
@@ -143,10 +168,11 @@ function render() {
       el('p', outcome.reason === 'empty-deck' ? 'Przeciwnik nie mógł dobrać karty.' : outcome.reason === 'hp' ? 'Przeciwnik stracił wszystkie punkty życia.' : ''),
       button('Nowy pokój', () => { token = null; localStorage.removeItem('karcianix:seat'); view = null; render(); }, true)); app.append(panel);
   } else {
+    if (view.mulligan && view.phase === 'playing') { mulliganPanel(); return; }
     const o = view.observation;
     const waiting = view.phase === 'waiting-for-turn';
-    const panel = el('section'); panel.append(el('h2', `Pokój ${view.roomCode} · Tura ${o.turn} — ${waiting ? `ruch gracza ${view.currentPlayer + 1}` : `gracz ${o.player + 1}`} (${deckNames[view.decks[waiting ? view.currentPlayer : o.player]]})`));
-    if (waiting) panel.append(el('p', 'Czekasz na ruch przeciwnika. Twoje pole i ręka są widoczne; ruchy będą dostępne w Twojej turze.', 'status'));
+    const panel = el('section'); panel.append(el('h2', view.mulligan ? `Pokój ${view.roomCode} · Gracz ${view.currentPlayer + 1} wybiera karty do wymiany` : `Pokój ${view.roomCode} · Tura ${o.turn} — ${waiting ? `ruch gracza ${view.currentPlayer + 1}` : `gracz ${o.player + 1}`} (${deckNames[view.decks[waiting ? view.currentPlayer : o.player]]})`));
+    if (waiting) panel.append(el('p', view.mulligan ? 'Zaraz wybierzesz własne karty do wymiany. Twoja ręka pozostaje widoczna.' : 'Czekasz na ruch przeciwnika. Twoje pole i ręka są widoczne; ruchy będą dostępne w Twojej turze.', 'status'));
     panel.append(el('p', `Twoje HP: ${o.self.hp} · Energia: ${o.self.energy}/${o.self.maxEnergy} · Ręka: ${o.self.handCount} · Talia: ${o.self.deckCount}`, 'status'),
       el('p', `Przeciwnik: gracz ${2 - o.player} (${deckNames[view.decks[1 - o.player]]}) · HP: ${o.opponent.hp} · Ręka: ${o.opponent.handCount} · Talia: ${o.opponent.deckCount}`));
     if (!waiting) {
