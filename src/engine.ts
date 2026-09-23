@@ -190,6 +190,13 @@ function endTurn(s: GameState): void {
     for (let i = 0; i < count; i++) u.modifiers.push({ origin: 'magiczny_napoj', attack: -1, health: -1 });
   }
   sweepDeaths(s);
+  // Geriatrix stays on the field through his attack and dies only when his
+  // controller finishes the turn, whether he attacked or not.
+  const owner = s.currentPlayer;
+  for (const u of s.players[owner].board) if (u.cardId === 'geriatrix' && s.catalogs[owner][u.cardId].abilityEnabled) {
+    u.damage = Math.max(u.damage, getStats(s, owner, u).maxHealth);
+  }
+  sweepDeaths(s);
   // Return surviving borrowed units before the opponent's start-of-turn effects.
   for (const owner of [0, 1] as const) {
     for (const u of [...s.players[owner].board]) if (u.borrowedFrom !== undefined) {
@@ -412,9 +419,6 @@ function attack(s: GameState, action: Extract<Action, { type: 'attack' }>): void
       unitDamage(s, enemy, defender.cardId, owner, attacker, dAttack - aShield);
       sweepDeaths(s);
     }
-  }
-  if (attacker.cardId === 'geriatrix' && aDef.abilityEnabled && s.players[owner].board.some(u => u.uid === attacker.uid)) {
-    attacker.damage = Math.max(attacker.damage, getStats(s, owner, attacker).maxHealth);
   }
   sweepDeaths(s);
 }

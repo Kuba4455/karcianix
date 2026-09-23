@@ -30,9 +30,10 @@ Opcjonalna zmienna środowiskowa `PORT` zmienia port serwera (domyślnie 3000).
 założeń potrzebnych do uruchomienia symulacji. Szczególnie istotna jest robocza
 interpretacja warunkowego życia Falballi/Dobrominy, blokad i Spadającego nieba.
 
-## Aktualne zasady — wersja 0.7.0
+## Aktualne zasady — wersja 0.8.0
 
 Karty i szczegóły nowej talii: [ROMANS.md](ROMANS.md).
+Geriatrix umiera na końcu swojej tury, także gdy nie zaatakuje; po ataku może pozostać na polu do zakończenia tury.
 Przykład: `npm run simulate -- --games 1000 --decks galowie,rzymianie`.
 
 - Dostępne są dwie niezależne talie po 60 kart. Domyślnie obaj gracze używają Galów.

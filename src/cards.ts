@@ -14,7 +14,7 @@ export const GAUL_CARDS: readonly CardDefinition[] = [
   card('asparanoix', 'Asparanoix', 'unit', 2, 4, 3, 'Przy wejściu osłabia kartę rywala o -1/-1, -2/0 lub 0/-2, dopóki żyje.', 'male'),
   card('ahigienix', 'Ahigienix', 'unit', 1, 4, 3, 'Na początku tury rywala: 1 obrażenie każdej jego jednostce.', 'male'),
   card('automatix', 'Automatix', 'unit', 1, 5, 3, '', 'male'),
-  card('geriatrix', 'Geriatrix', 'unit', 3, 1, 1, 'Ginę po rozliczeniu własnego ataku.', 'male'),
+  card('geriatrix', 'Geriatrix', 'unit', 3, 1, 1, 'Umiera na końcu swojej tury, niezależnie od tego, czy atakował.', 'male'),
   card('kakofonix', 'Kakofonix', 'unit', 2, 1, 3, 'Przy wejściu blokuje atak obecnych wrogich jednostek do początku następnej własnej tury.', 'male'),
   card('miecz', 'Miecz', 'equipment', 0, 0, 2, 'Stałe +2 ataku swojej jednostce.'),
   card('tarcza', 'Tarcza', 'equipment', 0, 0, 1, 'Stałe +1 życia swojej jednostce.'),

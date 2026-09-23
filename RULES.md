@@ -1,4 +1,4 @@
-# Zasady silnika — galowie-rzymianie-v7
+# Zasady silnika — galowie-rzymianie-v8
 
 Druga talia i zatwierdzone zdolności: [Rzymianie](ROMANS.md). Każdy gracz niezależnie wybiera Galów lub Rzymian; obie talie mają 60 kart (20 × 3).
 
@@ -15,7 +15,7 @@ Druga talia i zatwierdzone zdolności: [Rzymianie](ROMANS.md). Każdy gracz niez
 - Od drugiej własnej tury nowe jednostki mogą atakować od razu.
 - Zanim zaatakuje się gracza, trzeba usunąć karty z jego pola, w tym palisadę.
 - Obrażenia w walce są jednoczesne i zostają między turami.
-- Geriatrix ma 3 ataku i 1 życia. Umiera po rozliczeniu swojego ataku.
+- Geriatrix ma 3 ataku i 1 życia. Umiera na końcu swojej tury, nawet jeśli nie atakował.
 - Kakofonix kosztuje 3.
 - Ahigienix zadaje obrażenia tylko jednostkom, nie graczowi.
 - Kac po magicznym napoju to trwałe -1/-1 dla tej karty.
@@ -58,7 +58,7 @@ ustalenia autora. Ich zmiana może znacząco zmienić wyniki balansu.
 | `asparanoix` | Asparanoix | 2 / 4 | 3 | Przy wejściu wybiera kartę wrogiego pola i -1/-1, -2/0 lub 0/-2. Osłabienie znika po śmierci Asparanoixa; może zabić cel przez obniżenie HP. Bez wrogiej karty wchodzi bez efektu |
 | `ahigienix` | Ahigienix | 1 / 4 | 3 | Na początku tury rywala, przed dobieraniem, zadaje 1 obrażenie każdej jego jednostce. Tylko gdy źródło żyje. Kilka źródeł sumuje się; opcja `poisonStacks: false` ogranicza do jednego |
 | `automatix` | Automatix | 1 / 5 | 3 | Bez dodatkowej zdolności |
-| `geriatrix` | Geriatrix | 3 / 1 | 1 | Ginie po własnym ataku jednostki lub gracza. Nie ginie automatycznie na koniec tury. Samo bronienie się nie uruchamia tej zdolności |
+| `geriatrix` | Geriatrix | 3 / 1 | 1 | Pozostaje na polu po swoim ataku; ginie przy końcu tury gracza, który nim steruje, nawet jeśli nie zaatakował. Może wcześniej zginąć od obrażeń; wyłączenie zdolności wyłącza śmierć na końcu tury |
 | `kakofonix` | Kakofonix | 2 / 1 | 3 | Jednorazowo przy wejściu blokuje obecne jednostki przeciwnika do początku następnej własnej tury |
 | `miecz` | Miecz | — | 2 | Stałe +2 ataku wybranej własnej jednostki |
 | `tarcza` | Tarcza | — | 1 | Stałe +1 maksymalnego HP wybranej własnej jednostki |
@@ -128,3 +128,5 @@ Wersja 0.3.0: `startingHp: 15` ustala początkowe i maksymalne HP gracza. `allow
 Wersja 0.5.0: domyślne zasady to `startingHp: 12`, `openingHand: 6`, `drawPerTurn: 1`, `secondPlayerFirstDraw: 1`, `allowFirstTurnAttacks: false`, `maxEnergy: 10` i `stunRetaliation: true`. Falballa i Dobromina używają automatycznej premii kierunkowej zamiast postaw.
 
 Wersja 0.6.0: Gęsi mają 1/2 za 1, Miecz kosztuje 2, Obelix kosztuje 5, Kakofonix ma 2/1 za 3, a Spadające niebo kosztuje 3. Boty agresywny i kontrolny oceniają również najlepszy kolejny ruch w tej samej turze.
+
+Wersja 0.8.0: Geriatrix ginie na końcu swojej tury bez względu na to, czy wykonał atak. Przeżywa własny atak, o ile nie otrzyma w nim śmiertelnych obrażeń. Historyczne raporty korzystają z wcześniejszej wersji silnika i nie są odtwarzane przez tę wersję.

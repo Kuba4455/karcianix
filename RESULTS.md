@@ -1,4 +1,8 @@
-# Status wersji 0.7.0
+# Status wersji 0.8.0
+
+Geriatrix (3/1 za 1) pozostaje na polu po wykonaniu ataku i ginie dopiero na końcu swojej tury, również bez ataku. Testy zasad i symulacji: **102 zaliczone**; TypeScript bez błędów. Nie wykonano nowego badania balansu po tej zmianie. Wyniki poniżej są historyczne.
+
+## Historyczny status wersji 0.7.0
 
 Dodano talię Rzymian: 20 kart po trzy kopie, wszystkie zatwierdzone zdolności,
 wybór talii graczy, obsługę botów i odtwarzanie raportów z wybranymi taliami.
