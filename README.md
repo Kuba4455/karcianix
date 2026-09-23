@@ -4,7 +4,7 @@ Działający projekt TypeScript do testowania zasad, symulowania dowolnej liczby
 i porównywania pojedynczych zmian kart. Obaj gracze mają po 60 kart: po trzy kopie
 każdej z 20 kart wybranej talii (Galowie lub Rzymianie). Prosty interfejs tekstowy w przeglądarce, bez zależności produkcyjnych.
 
-## Zagraj 1 na 1
+## Zagraj online 1 na 1
 
 Wymagany Node.js **22.18 lub nowszy**. Po pobraniu repozytorium, w jego katalogu:
 
@@ -13,18 +13,36 @@ npm ci
 npm run play
 ```
 
-Otwórz **http://127.0.0.1:3000**. Wybierz osobno talię gracza 1 i 2 (Galowie albo
-Rzymianie) oraz rozpoczynającego. Gra odbywa się na **jednym urządzeniu przekazywanym
-między graczami**, bez kont i bez grafik. Przyciski na kartach pozwalają tworzyć
-energię, zagrywać karty, wybierać cele ataków i używać wszystkich zdolności.
-Zakończenie tury zasłania ręce; kolejny gracz odsłania swoją turę osobnym przyciskiem.
-HP i statystyki są obliczane przez ten sam silnik co w symulacjach.
+Na serwerze z Dockerem i Compose uruchom w katalogu repo:
 
-To tryb lokalny, nie gra sieciowa na dwóch komputerach. Zasłona chroni przed
-przypadkowym podejrzeniem przy przekazywaniu urządzenia; gracze współdzielą jedną
-sesję. Serwer nasłuchuje tylko lokalnie. Odświeżenie strony zachowuje partię,
-ale zatrzymanie serwera ją usuwa. Można uruchomić nową partię z nowym wyborem talii.
-Opcjonalna zmienna środowiskowa `PORT` zmienia port serwera (domyślnie 3000).
+```bash
+docker compose up -d --build
+```
+
+Gra jest dostępna na porcie **3000** serwera. Port możesz zmienić przez
+`GAME_PORT=8080 docker compose up -d --build`. Domyślnie Compose wystawia port
+na wszystkie interfejsy; przy reverse proxy ustaw `GAME_BIND=127.0.0.1`,
+aby dostęp do kontenera był tylko lokalny, i skonfiguruj HTTPS w proxy.
+`docker compose logs -f` wyświetla logi, a `docker compose down` zatrzymuje grę.
+Kontener nie wymaga bazy, wolumenu ani instalowania pakietów npm na serwerze.
+
+Bez Dockera można użyć `npm run play`. Wtedy proces słucha domyślnie na
+`127.0.0.1`; `HOST=0.0.0.0` pozwala słuchać na interfejsie sieciowym, a `PORT`
+zmienia port. Obaj gracze otwierają ten
+sam adres strony na **osobnych urządzeniach**. Gospodarz wybiera talię i tworzy
+pokój, przekazuje drugiej osobie 12-znakowy kod pokoju. Gość dołącza, wybierając
+własną talię. Gracz rozpoczynający jest losowany. Strona co 2,5 sekundy sprawdza,
+czy przeciwnik skończył turę; nie trzeba ręcznie odświeżać. Każdy widzi wyłącznie
+swoją rękę oraz legalne ruchy w swojej turze.
+
+Po dołączeniu przeglądarka zapamiętuje prywatny identyfikator miejsca gracza,
+więc odświeżenie strony nie przerywa partii. Sam kod pokoju umożliwia tylko
+zajęcie wolnego miejsca; po dołączeniu drugiego gracza nie można wejść jako
+trzeci. Partie pozostają wyłącznie w RAM procesu i wygasają po czterech godzinach
+bez żądań do pokoju; restart procesu usuwa wszystkie gry. Uruchom jeden proces
+serwera (bez równoległych replik bez współdzielonego stanu). Przed udostępnieniem
+w internecie skonfiguruj HTTPS w reverse proxy; nie umieszczaj identyfikatorów
+graczy w adresie URL ani nie udostępniaj profilu przeglądarki.
 
 **Zacznij od [RULES.md](RULES.md).** Zasady podane przez autora są oddzielone od
 założeń potrzebnych do uruchomienia symulacji. Szczególnie istotna jest robocza

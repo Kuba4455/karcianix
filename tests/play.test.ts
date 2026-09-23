@@ -72,15 +72,16 @@ afterEach(async () => {
   }
 });
 
-test('HTTP: strona, nowa gra, przekazanie tury i ochrona przed obcą stroną', async () => {
+test('HTTP: dwa urządzenia, prywatne ręce, tury, osobne pokoje i ochrona przed obcą stroną', async () => {
   const server = createPlayServer(); servers.push(server);
   await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
   const address = server.address();
   if (!address || typeof address === 'string') throw new Error('No port');
   const origin = `http://127.0.0.1:${address.port}`;
-  const post = (path: string, data: unknown, source = origin) => fetch(`${origin}${path}`, {
-    method: 'POST', headers: { Origin: source, 'Content-Type': 'application/json' }, body: JSON.stringify(data),
+  const post = (path: string, data: unknown, token?: string, source = origin) => fetch(`${origin}${path}`, {
+    method: 'POST', headers: { Origin: source, 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify(data),
   });
+  const get = (token?: string) => fetch(`${origin}/api/view`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
   for (const path of ['/', '/app.js', '/style.css']) {
     const res = await fetch(origin + path);
     expect(res.status).toBe(200);
@@ -88,14 +89,41 @@ test('HTTP: strona, nowa gra, przekazanie tury i ochrona przed obcą stroną', a
     expect((await res.text()).length).toBeGreaterThan(100);
   }
   expect((await fetch(origin + '/src/engine.ts')).status).toBe(404);
-  expect((await post('/api/new', { decks: ['galowie', 'rzymianie'], firstPlayer: 0, revision: 0 }, 'https://example.com')).status).toBe(403);
-  const created = await post('/api/new', { decks: ['galowie', 'rzymianie'], firstPlayer: 0, revision: 0 });
-  const covered = await created.json();
-  expect(covered.phase).toBe('handoff');
-  const current = await (await post('/api/reveal', { revision: covered.revision })).json();
-  const end = current.actions.find((e: { action: { type: string } }) => e.action.type === 'endTurn');
-  const next = await (await post('/api/action', { id: end.id, revision: current.revision })).json();
-  expect(next.phase).toBe('handoff');
-  expect(next.player).toBe(1);
-  expect((await post('/api/action', { id: end.id, revision: current.revision })).status).toBe(409);
+  expect((await get()).status).toBe(401);
+  expect((await post('/api/create', { deck: 'galowie' }, undefined, 'https://example.com')).status).toBe(403);
+  const created = await (await post('/api/create', { deck: 'galowie' })).json();
+  expect(created.view.phase).toBe('waiting-for-guest');
+  expect(created.view).not.toHaveProperty('observation');
+  expect(created.token).toHaveLength(64);
+  expect((await post('/api/join', { code: created.view.roomCode, deck: 'rzymianie' }, undefined, 'https://example.com')).status).toBe(403);
+  const guest = await (await post('/api/join', { code: created.view.roomCode, deck: 'rzymianie' })).json();
+  expect(guest.token).not.toBe(created.token);
+  expect((await post('/api/join', { code: created.view.roomCode, deck: 'galowie' })).status).toBe(409);
+  const hostView = await (await get(created.token)).json();
+  const guestView = await (await get(guest.token)).json();
+  const active = hostView.phase === 'playing' ? { token: created.token, view: hostView } : { token: guest.token, view: guestView };
+  const waiting = hostView.phase === 'playing' ? { token: guest.token, view: guestView } : { token: created.token, view: hostView };
+  expect(active.view.observation.self.hand).toHaveLength(6);
+  expect(active.view.observation.opponent).not.toHaveProperty('hand');
+  expect(waiting.view.phase).toBe('waiting-for-turn');
+  expect(waiting.view).not.toHaveProperty('observation');
+  expect(waiting.view).not.toHaveProperty('actions');
+  expect(waiting.view).not.toHaveProperty('log');
+  const end = active.view.actions.find((e: { action: { type: string } }) => e.action.type === 'endTurn');
+  expect((await post('/api/action', { id: end.id, revision: active.view.revision }, waiting.token)).status).toBe(403);
+  expect((await post('/api/action', { id: end.id, revision: active.view.revision }, undefined)).status).toBe(401);
+  expect((await post('/api/action', { id: end.id, revision: active.view.revision }, active.token, 'https://example.com')).status).toBe(403);
+  const next = await (await post('/api/action', { id: end.id, revision: active.view.revision }, active.token)).json();
+  expect(next.phase).toBe('waiting-for-turn');
+  const otherTurn = await (await get(waiting.token)).json();
+  expect(otherTurn.phase).toBe('playing');
+  expect(otherTurn.observation.self.hand).toHaveLength(7);
+  expect((await post('/api/action', { id: end.id, revision: active.view.revision }, waiting.token)).status).toBe(409);
+  const secondRoom = await (await post('/api/create', { deck: 'rzymianie' })).json();
+  expect(secondRoom.view.roomCode).not.toBe(created.view.roomCode);
+  expect((await get(secondRoom.token)).status).toBe(200);
+  expect((await post('/api/cancel', {}, secondRoom.token)).status).toBe(200);
+  expect((await get(secondRoom.token)).status).toBe(401);
+  expect((await post('/api/cancel', {}, created.token)).status).toBe(409);
+  expect((await get('wrong-token')).status).toBe(401);
 });

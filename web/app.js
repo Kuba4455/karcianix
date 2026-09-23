@@ -2,6 +2,7 @@ const app = document.querySelector('#app');
 const errorBox = document.querySelector('#error');
 let view;
 let busy = false;
+let token = localStorage.getItem('karcianix:seat');
 const deckNames = { galowie: 'Galowie', rzymianie: 'Rzymianie' };
 
 function el(tag, text, className) {
@@ -15,48 +16,61 @@ function button(label, handler, primary = false) {
   node.type = 'button'; node.addEventListener('click', handler); return node;
 }
 function showError(message) { errorBox.textContent = message; errorBox.hidden = !message; }
-async function request(path, data) {
+async function request(path, data, quiet = false) {
   if (busy) return;
   busy = true; app.setAttribute('aria-busy', 'true');
-  app.querySelectorAll('button, select').forEach(node => { node.disabled = true; });
-  showError('');
+  app.querySelectorAll('button, select, input').forEach(node => { node.disabled = true; });
+  if (!quiet) showError('');
   try {
-    const response = await fetch(path, data === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    const headers = { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(data === undefined ? {} : { 'Content-Type': 'application/json' }) };
+    const response = await fetch(path, data === undefined ? { headers } : { method: 'POST', headers, body: JSON.stringify(data) });
     const result = await response.json();
-    if (!response.ok) throw new Error(result.error || 'Nie udało się wykonać ruchu.');
-    view = result; render();
+    if (!response.ok) {
+      if (response.status === 401) { token = null; localStorage.removeItem('karcianix:seat'); view = null; render(); }
+      throw new Error(result.error || 'Nie udało się wykonać ruchu.');
+    }
+    if (result.token) { token = result.token; localStorage.setItem('karcianix:seat', token); }
+    if (result.phase === 'cancelled') { token = null; localStorage.removeItem('karcianix:seat'); view = null; render(); return; }
+    const nextView = result.view ?? result;
+    const changed = !view || nextView.phase !== view.phase || nextView.revision !== view.revision;
+    view = nextView;
+    if (!quiet || changed) render();
   } catch (error) {
-    // A lost response may still have committed the move: refresh instead of retrying it.
-    try {
-      const response = await fetch('/api/view');
-      if (response.ok) { view = await response.json(); render(); }
-    } catch { /* Keep the last view and allow an explicit refresh. */ }
-    showError(error.message);
-    if (!view) app.replaceChildren(el('p', 'Nie można połączyć się z grą. Sprawdź, czy serwer jest uruchomiony.'), button('Spróbuj ponownie', () => request('/api/view')));
+    if (path === '/api/action' && token) {
+      // A lost response may still have committed the move: refresh instead of retrying it.
+      try {
+        const response = await fetch('/api/view', { headers: { Authorization: `Bearer ${token}` } });
+        if (response.ok) { view = await response.json(); render(); }
+      } catch { /* Keep the last view. */ }
+    }
+    if (!quiet) showError(error.message);
   } finally {
     busy = false; app.setAttribute('aria-busy', 'false');
-    app.querySelectorAll('button, select').forEach(node => { node.disabled = false; });
+    app.querySelectorAll('button, select, input').forEach(node => { node.disabled = false; });
   }
 }
 const act = id => request('/api/action', { id, revision: view.revision });
 
 function setup() {
-  const panel = el('section'); panel.append(el('h2', 'Nowa gra'));
-  panel.append(el('p', 'Każdy gracz wybiera talię 60 kart. Przy zmianie tury przekaż urządzenie drugiej osobie.'));
+  const panel = el('section'); panel.append(el('h2', 'Gra online'));
+  panel.append(el('p', 'Każdy gracz otwiera tę stronę na swoim urządzeniu i wybiera własną talię. Gospodarz przekazuje drugiej osobie kod pokoju.'));
   const grid = el('div', undefined, 'form-grid');
-  function select(label, options) {
-    const wrapper = el('label', label); const input = el('select');
-    for (const [value, text] of options) { const option = el('option', text); option.value = value; input.append(option); }
-    wrapper.append(input); grid.append(wrapper); return input;
-  }
-  const firstDeck = select('Talia gracza 1', Object.entries(deckNames));
-  const secondDeck = select('Talia gracza 2', Object.entries(deckNames)); secondDeck.value = 'rzymianie';
-  const starter = select('Rozpoczyna', [['random', 'Losowo'], ['0', 'Gracz 1'], ['1', 'Gracz 2']]);
-  panel.append(grid, button('Rozpocznij grę', () => request('/api/new', {
-    decks: [firstDeck.value, secondDeck.value], firstPlayer: starter.value === 'random' ? 'random' : Number(starter.value), revision: view.revision,
-  }), true));
-  if (view.phase !== 'setup') panel.append(button('Wróć do partii', render));
+  const deckLabel = el('label', 'Twoja talia'); const deck = el('select');
+  for (const [id, name] of Object.entries(deckNames)) { const option = el('option', name); option.value = id; deck.append(option); }
+  deckLabel.append(deck);
+  const codeLabel = el('label', 'Kod pokoju (jeśli dołączasz)'); const code = el('input');
+  code.placeholder = 'Np. A1B2C3D4E5F6'; code.maxLength = 12; code.autocomplete = 'off';
+  codeLabel.append(code); grid.append(deckLabel, codeLabel);
+  panel.append(grid);
+  const toolbar = el('div', undefined, 'toolbar');
+  toolbar.append(button('Utwórz pokój', () => request('/api/create', { deck: deck.value }), true),
+    button('Dołącz do pokoju', () => request('/api/join', { deck: deck.value, code: code.value.trim() })));
+  panel.append(toolbar);
   app.replaceChildren(panel); rules(panel);
+}
+
+function leave() {
+  if (confirm('Anulować pokój?')) request('/api/cancel', {});
 }
 
 function rules(parent) {
@@ -68,8 +82,8 @@ function rules(parent) {
     'Na karcie w ręce wybierz „Zagraj…” i cel albo zamianę na energię. Zapłacisz podany koszt. Widać tylko legalne ruchy.',
     'Na własnej jednostce wybierz cel ataku lub zdolność. Przeciwnika można zaatakować dopiero po opróżnieniu jego pola.',
     'W pierwszej własnej turze żaden gracz nie atakuje. Lew i Ceplus czekają również w turze swojego wystawienia.',
-    'Zakończ turę, przekaż urządzenie i dopiero wtedy odsłoń rękę następnego gracza.',
-    'Wygrywasz, gdy przeciwnik straci HP lub nie może dobrać wymaganej karty. Zamknięcie karty przeglądarki nie kasuje gry, jeśli serwer nadal działa.',
+    'Zakończ turę i zaczekaj na ruch drugiej osoby. Każdy widzi tylko własną rękę.',
+    'Wygrywasz, gdy przeciwnik straci HP lub nie może dobrać wymaganej karty. Partie działają wyłącznie w pamięci serwera i wygasają po czterech godzinach bezczynności.',
   ]) list.append(el('li', line));
   details.append(list); parent.append(details);
 }
@@ -111,12 +125,14 @@ function board(parent, player, own, o) {
 
 function render() {
   app.replaceChildren();
-  if (view.phase === 'setup') { setup(); return; }
-  if (view.phase === 'handoff') {
+  if (!view) { setup(); return; }
+  if (view.phase === 'waiting-for-guest' || view.phase === 'waiting-for-turn') {
     const panel = el('section', undefined, 'handoff');
-    panel.append(el('h2', `Przekaż urządzenie graczowi ${view.player + 1}`),
-      el('p', `Tura ${view.turn} · ${deckNames[view.decks[view.player]]}. Ręce są zasłonięte.`),
-      button(`Jestem graczem ${view.player + 1} — odsłoń moją turę`, () => request('/api/reveal', { revision: view.revision }), true));
+    panel.append(el('h2', view.phase === 'waiting-for-guest' ? 'Czekam na drugiego gracza' : `Tura gracza ${view.player + 1}`),
+      el('p', `Twój pokój: ${view.roomCode} · jesteś graczem ${view.seat + 1}.`),
+      el('p', view.phase === 'waiting-for-guest' ? 'Przekaż kod pokoju drugiej osobie. Nie udostępniaj jej swojego urządzenia ani danych przeglądarki.' : 'Czekam na zakończenie tury przeciwnika.'),
+      button('Odśwież', () => request('/api/view')));
+    if (view.phase === 'waiting-for-guest') panel.append(button('Anuluj pokój', leave));
     app.append(panel); return;
   }
   if (view.phase === 'finished') {
@@ -125,18 +141,17 @@ function render() {
     const panel = el('section'); panel.append(el('h2', text),
       el('p', `HP gracza 1: ${view.hp[0]} · HP gracza 2: ${view.hp[1]}`),
       el('p', outcome.reason === 'empty-deck' ? 'Przeciwnik nie mógł dobrać karty.' : outcome.reason === 'hp' ? 'Przeciwnik stracił wszystkie punkty życia.' : ''),
-      button('Zagraj ponownie — wybierz talie', setup, true)); app.append(panel);
+      button('Nowy pokój', () => { token = null; localStorage.removeItem('karcianix:seat'); view = null; render(); }, true)); app.append(panel);
   } else {
     const o = view.observation;
-    const panel = el('section'); panel.append(el('h2', `Tura ${o.turn} — gracz ${o.player + 1} (${deckNames[view.decks[o.player]]})`));
+    const panel = el('section'); panel.append(el('h2', `Pokój ${view.roomCode} · Tura ${o.turn} — gracz ${o.player + 1} (${deckNames[view.decks[o.player]]})`));
     panel.append(el('p', `Twoje HP: ${o.self.hp} · Energia: ${o.self.energy}/${o.self.maxEnergy} · Ręka: ${o.self.handCount} · Talia: ${o.self.deckCount}`, 'status'),
       el('p', `Przeciwnik: gracz ${2 - o.player} (${deckNames[view.decks[1 - o.player]]}) · HP: ${o.opponent.hp} · Ręka: ${o.opponent.handCount} · Talia: ${o.opponent.deckCount}`));
     if (o.self.turnsTaken === 1) panel.append(el('p', 'Pierwsza własna tura: ataki są zablokowane.'));
     panel.append(el('p', o.self.maxEnergy >= o.rules.maxEnergy ? 'Osiągnięto maksymalną energię.' :
       o.self.energyCreated ? 'Tworzenie energii w tej turze jest już wykorzystane.' : 'Możesz zamienić jedną kartę z ręki na energię.'));
     const toolbar = el('div', undefined, 'toolbar');
-    toolbar.append(button('Zakończ turę i zasłoń rękę', () => act(view.actions.find(e => e.action.type === 'endTurn').id), true),
-      button('Nowa gra', () => { if (confirm('Przerwać tę partię i wybrać talie od nowa?')) setup(); }));
+    toolbar.append(button('Zakończ turę', () => act(view.actions.find(e => e.action.type === 'endTurn').id), true));
     panel.append(toolbar); rules(panel); app.append(panel);
     board(app, o.opponent, false, o); board(app, o.self, true, o);
     const hand = el('section'); hand.append(el('h2', 'Twoja ręka'));
@@ -164,4 +179,5 @@ function render() {
   history.append(log); app.append(history);
 }
 
-request('/api/view');
+if (token) request('/api/view'); else { view = null; render(); }
+setInterval(() => { if (token && !busy) request('/api/view', undefined, true); }, 2500);
