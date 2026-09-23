@@ -34,6 +34,7 @@ interpretacja warunkowego życia Falballi/Dobrominy, blokad i Spadającego nieba
 
 Karty i szczegóły nowej talii: [ROMANS.md](ROMANS.md).
 Geriatrix umiera na końcu swojej tury, także gdy nie zaatakuje; po ataku może pozostać na polu do zakończenia tury.
+Rzymianie: Kalimatis kosztuje 4, Gajusz Pięknus ma 2/4, a Kodeks kosztuje 1. Cezarów nie chronią inne Cezary; Koloseum nie chowa Koloseum.
 Przykład: `npm run simulate -- --games 1000 --decks galowie,rzymianie`.
 
 - Dostępne są dwie niezależne talie po 60 kart. Domyślnie obaj gracze używają Galów.

@@ -84,7 +84,7 @@ export function combatBonus(def: CardDefinition, against: CardDefinition): numbe
 export function protectedUnit(s: GameState, owner: PlayerId, unit: Permanent): boolean {
   if (unit.hiddenBy) return true;
   if (unit.cardId === 'cezar' && s.catalogs[owner][unit.cardId].abilityEnabled &&
-    s.players[owner].board.some(u => u.uid !== unit.uid && s.catalogs[owner][u.cardId].kind === 'unit')) return true;
+    s.players[owner].board.some(u => u.uid !== unit.uid && u.cardId !== 'cezar' && s.catalogs[owner][u.cardId].kind === 'unit')) return true;
   if (!unit.protectedBy || !s.catalogs[owner][unit.cardId].abilityEnabled) return false;
   return s.players[owner].board.some(x => x.uid === unit.protectedBy &&
     x.modifiers.some(m => m.sourceUid === unit.uid && m.origin === 'panoramix'));
@@ -260,7 +260,7 @@ export function getLegalActions(s: GameState): Action[] {
         actions.push({ type: 'sacrifice', sourceUid: u.uid, targetUid: target.uid });
     }
     if (def.abilityEnabled && u.cardId === 'koloseum' && self.energy >= 2) for (const target of self.board) {
-      if (target.uid !== u.uid && !target.hiddenBy && s.catalogs[owner][target.cardId].kind === 'unit')
+      if (target.uid !== u.uid && target.cardId !== 'koloseum' && !target.hiddenBy && s.catalogs[owner][target.cardId].kind === 'unit')
         actions.push({ type: 'hide', sourceUid: u.uid, targetUid: target.uid });
     }
     if (u.hiddenBy || (def.abilityEnabled && ['ceplus', 'lew'].includes(u.cardId) && u.enteredTurn === s.turn)) continue;

@@ -129,4 +129,4 @@ Wersja 0.5.0: domyślne zasady to `startingHp: 12`, `openingHand: 6`, `drawPerTu
 
 Wersja 0.6.0: Gęsi mają 1/2 za 1, Miecz kosztuje 2, Obelix kosztuje 5, Kakofonix ma 2/1 za 3, a Spadające niebo kosztuje 3. Boty agresywny i kontrolny oceniają również najlepszy kolejny ruch w tej samej turze.
 
-Wersja 0.8.0: Geriatrix ginie na końcu swojej tury bez względu na to, czy wykonał atak. Przeżywa własny atak, o ile nie otrzyma w nim śmiertelnych obrażeń. Historyczne raporty korzystają z wcześniejszej wersji silnika i nie są odtwarzane przez tę wersję.
+Wersja 0.8.0: Geriatrix ginie na końcu swojej tury bez względu na to, czy wykonał atak. Przeżywa własny atak, o ile nie otrzyma w nim śmiertelnych obrażeń. Kalimatis kosztuje 4, Gajusz Pięknus ma 2/4, Kodeks kosztuje 1; Cezarów nie chronią inni Cezarowie, a Koloseum nie chowa Koloseum. Historyczne raporty korzystają z wcześniejszej wersji silnika i nie są odtwarzane przez tę wersję.
