@@ -84,9 +84,7 @@ export class OnlineRooms {
     const view = room.session.view();
     if (view.phase === 'finished') return { ...common, ...view };
     if (view.phase !== 'playing') throw new Error('Nieoczekiwany stan partii online.');
-    if (view.observation.player !== player) return { ...common, phase: 'waiting-for-turn' as const,
-      turn: view.observation.turn, player: view.observation.player };
-    return { ...common, ...view };
+    return { ...common, ...room.session.viewFor(player) };
   }
 
   act(token: unknown, id: unknown, revision: unknown) {
