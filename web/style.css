@@ -6,11 +6,11 @@ header p, footer, .muted { color: #555; }
 section, article, .panel { background: white; border: 1px solid #bbb; border-radius: 5px; padding: 16px; margin: 12px 0; }
 article { padding: 12px; margin: 0; min-width: 0; }
 article h3 { margin-top: 0; }
-button, select { font: inherit; padding: 9px 12px; border: 1px solid #777; border-radius: 4px; background: #fff; color: #222; }
+button, select, input { font: inherit; padding: 9px 12px; border: 1px solid #777; border-radius: 4px; background: #fff; color: #222; }
 button { cursor: pointer; text-align: left; }
 button:hover:not(:disabled) { background: #e9edf2; }
 button:disabled { cursor: wait; opacity: .5; }
-button:focus-visible, select:focus-visible, summary:focus-visible { outline: 3px solid #1f61ae; outline-offset: 2px; }
+button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid #1f61ae; outline-offset: 2px; }
 .primary { background: #24466b; color: white; border-color: #24466b; }
 .primary:hover:not(:disabled) { background: #17314e; }
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 12px; }
