@@ -9,6 +9,9 @@
   },
   "scripts": {
     "play": "node src/play-server.ts",
+    "cards:csv": "node scripts/sync-unit-csv.ts",
+    "cards:csv:check": "node scripts/sync-unit-csv.ts --check",
+    "pretest": "npm run cards:csv:check",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",

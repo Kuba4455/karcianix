@@ -67,6 +67,13 @@ npm run simulate -- --games 1000 --seed 42
 npm run experiment -- --games 10000 --seed 42
 ```
 
+Statyczne dane jednostek obu talii są w [CSV Galów](data/galowie-jednostki.csv)
+i [CSV Rzymian](data/rzymianie-jednostki.csv): identyfikator, nazwa, bazowy atak,
+życie, koszt i opis zdolności. Pliki obejmują tylko jednostki
+(`kind: unit`), więc nie zawierają zaklęć, wyposażenia ani budowli. Po zmianie
+definicji kart uruchom `npm run cards:csv` i dołącz oba aktualne CSV do zmiany.
+`npm test` sprawdza ich zgodność z definicjami i zgłosi brak aktualizacji.
+
 Ostatnie polecenie porównuje **Obelixa 5/5 za 5** z **Obelixem 5/5 za 6**.
 `--games 10000` oznacza dokładnie 10 000 partii, czyli 5 000 par, a nie 10 000 par.
 Zależności są przypięte w `package-lock.json`; używaj `npm ci`.
