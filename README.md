@@ -19,7 +19,7 @@ Na serwerze z Dockerem i Compose uruchom w katalogu repo:
 docker compose up -d --build
 ```
 
-Gra jest dostępna na porcie **3000** serwera. Port możesz zmienić przez
+Gra jest dostępna na porcie **3111** serwera. Port możesz zmienić przez
 `GAME_PORT=8080 docker compose up -d --build`. Domyślnie Compose wystawia port
 na wszystkie interfejsy; przy reverse proxy ustaw `GAME_BIND=127.0.0.1`,
 aby dostęp do kontenera był tylko lokalny, i skonfiguruj HTTPS w proxy.

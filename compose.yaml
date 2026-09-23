@@ -4,9 +4,9 @@ services:
     restart: unless-stopped
     environment:
       HOST: 0.0.0.0
-      PORT: 3000
+      PORT: 3111
     ports:
-      - "${GAME_BIND:-0.0.0.0}:${GAME_PORT:-3000}:3000"
+      - "${GAME_BIND:-0.0.0.0}:${GAME_PORT:-3111}:3111"
     read_only: true
     security_opt:
       - no-new-privileges:true

@@ -6,5 +6,5 @@ COPY --chown=node:node src ./src
 COPY --chown=node:node web ./web
 
 USER node
-EXPOSE 3000
+EXPOSE 3111
 CMD ["node", "src/play-server.ts"]
