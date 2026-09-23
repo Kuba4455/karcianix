@@ -93,7 +93,7 @@ function score(o: PlayerObservation, action: Action, control: boolean): number {
     case 'unhide': {
       const target = o.self.board.find(u => u.uid === action.targetUid)!;
       return target.attacksUsed === 0 && !target.stuns.length && stats(target, o.self.board, catalog).attack > 0 &&
-        (o.rules.allowFirstTurnAttacks || o.self.turnsTaken > 1) &&
+        (o.rules.allowFirstTurnAttacks || o.turn > 1) &&
         !(catalog[target.cardId].abilityEnabled && ['lew', 'ceplus'].includes(target.cardId) && target.enteredTurn === o.turn) ? 2 : -2;
     }
     case 'attack': return attackScore(o, action, control);
@@ -126,7 +126,7 @@ function score(o: PlayerObservation, action: Action, control: boolean): number {
         case 'wieniec': case 'hasta': case 'tarcza_rzymska':
           if (target) {
             const ready = !target.hiddenBy && !target.stuns.length && target.attacksUsed === 0 &&
-              (o.rules.allowFirstTurnAttacks || o.self.turnsTaken > 1);
+              (o.rules.allowFirstTurnAttacks || o.turn > 1);
             result += card.cardId === 'tarcza_rzymska' ? 3 : (card.cardId === 'wieniec' ? 2.7 : 1.3) + (ready ? 3 : 0);
           }
           break;
@@ -144,7 +144,7 @@ function score(o: PlayerObservation, action: Action, control: boolean): number {
           break;
         case 'miecz': case 'sierp': case 'tarcza': case 'magiczny_napoj':
           if (target) {
-            const ready = target.attacksUsed === 0 && !target.stuns.length && (o.rules.allowFirstTurnAttacks || o.self.turnsTaken > 1);
+            const ready = target.attacksUsed === 0 && !target.stuns.length && (o.rules.allowFirstTurnAttacks || o.turn > 1);
             result = card.cardId === 'tarcza' ? 1.6 : (card.cardId === 'miecz' ? 2.7 : card.cardId === 'sierp' ? 1.3 : ready ? 3.3 : -2);
             if (ready && card.cardId !== 'tarcza') {
               result += 3;

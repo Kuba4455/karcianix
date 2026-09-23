@@ -49,7 +49,7 @@ graczy w adresie URL ani nie udostępniaj profilu przeglądarki.
 założeń potrzebnych do uruchomienia symulacji. Szczególnie istotna jest robocza
 interpretacja warunkowego życia Falballi/Dobrominy, blokad i Spadającego nieba.
 
-## Aktualne zasady — wersja 0.9.0
+## Aktualne zasady — wersja 0.10.0
 
 Karty i szczegóły nowej talii: [ROMANS.md](ROMANS.md).
 Geriatrix umiera na końcu swojej tury, także gdy nie zaatakuje; po ataku może pozostać na polu do zakończenia tury.
@@ -63,7 +63,7 @@ Przykład: `npm run simulate -- --games 1000 --decks galowie,rzymianie`.
 - Obaj gracze zaczynają z **15 HP**, leczenie gracza nie przekracza 15 HP.
 - Spadające niebo kosztuje **3 energii**.
 - Gęsi mają **1/2 za 1**, Miecz kosztuje **2**, Obelix kosztuje **5**, a Kakofonix ma **2/1 za 3**.
-- W pierwszej własnej turze obu graczy nie można deklarować żadnego ataku. Można tworzyć energię i zagrywać karty. Od drugiej własnej tury jednostki, także nowo zagrane, mogą normalnie atakować.
+- W pierwszej turze gracz rozpoczynający nie może deklarować ataków. Drugi gracz może atakować już w swojej pierwszej turze. Obaj mogą tworzyć energię i zagrywać karty.
 - Zablokowana jednostka nie oddaje obrażeń do chwili odblokowania.
 - Panoramix daje wybranej jednostce już leżącej na stole wyłącznie +0/+2 i pozostaje chroniony przed atakami, dopóki żyją ta jednostka oraz jej premia.
 - Falballa i Dobromina automatycznie dostają premię ataku, gdy atakują mężczyznę, oraz zużywalną pulę dodatkowego HP, gdy są przez niego atakowane. Nie wymagają przełączania postawy.

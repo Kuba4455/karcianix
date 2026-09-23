@@ -267,7 +267,7 @@ export function getLegalActions(s: GameState): Action[] {
     if (u.hiddenBy || (def.abilityEnabled && ['ceplus', 'lew'].includes(u.cardId) && u.enteredTurn === s.turn)) continue;
     if (u.stuns.length) continue;
     if (def.kind !== 'unit' || u.attacksUsed > 0) continue;
-    if (!s.rules.allowFirstTurnAttacks && self.turnsTaken === 1) continue;
+    if (!s.rules.allowFirstTurnAttacks && owner === s.firstPlayer && self.turnsTaken === 1) continue;
     const baseAttack = getStats(s, owner, u).attack;
     if (enemy.board.length === 0 && baseAttack > 0) actions.push({ type: 'attack', attackerUid: u.uid, targetUid: playerTarget(enemyOwner) });
     else for (const target of enemy.board) if (!protectedUnit(s, enemyOwner, target)) {
