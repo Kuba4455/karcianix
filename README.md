@@ -2,7 +2,29 @@
 
 Działający projekt TypeScript do testowania zasad, symulowania dowolnej liczby gier
 i porównywania pojedynczych zmian kart. Obaj gracze mają po 60 kart: po trzy kopie
-każdej z 20 kart wybranej talii (Galowie lub Rzymianie). Bez interfejsu graficznego i bez zależności produkcyjnych.
+każdej z 20 kart wybranej talii (Galowie lub Rzymianie). Prosty interfejs tekstowy w przeglądarce, bez zależności produkcyjnych.
+
+## Zagraj 1 na 1
+
+Wymagany Node.js **22.18 lub nowszy**. Po pobraniu repozytorium, w jego katalogu:
+
+```bash
+npm ci
+npm run play
+```
+
+Otwórz **http://127.0.0.1:3000**. Wybierz osobno talię gracza 1 i 2 (Galowie albo
+Rzymianie) oraz rozpoczynającego. Gra odbywa się na **jednym urządzeniu przekazywanym
+między graczami**, bez kont i bez grafik. Przyciski na kartach pozwalają tworzyć
+energię, zagrywać karty, wybierać cele ataków i używać wszystkich zdolności.
+Zakończenie tury zasłania ręce; kolejny gracz odsłania swoją turę osobnym przyciskiem.
+HP i statystyki są obliczane przez ten sam silnik co w symulacjach.
+
+To tryb lokalny, nie gra sieciowa na dwóch komputerach. Zasłona chroni przed
+przypadkowym podejrzeniem przy przekazywaniu urządzenia; gracze współdzielą jedną
+sesję. Serwer nasłuchuje tylko lokalnie. Odświeżenie strony zachowuje partię,
+ale zatrzymanie serwera ją usuwa. Można uruchomić nową partię z nowym wyborem talii.
+Opcjonalna zmienna środowiskowa `PORT` zmienia port serwera (domyślnie 3000).
 
 **Zacznij od [RULES.md](RULES.md).** Zasady podane przez autora są oddzielone od
 założeń potrzebnych do uruchomienia symulacji. Szczególnie istotna jest robocza
