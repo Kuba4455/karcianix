@@ -117,7 +117,7 @@ function board(parent, player, own, o) {
     if (def.abilityEnabled && ['falballa', 'dobromina'].includes(card.cardId)) status.push(`Zużyte warunkowe HP przeciw mężczyznom: ${card.maleDefenseDamage}`);
     if (card.temporaryDamage?.some(d => d.amount)) status.push(`Obrażenia z oszczepu: ${card.temporaryDamage.reduce((sum, d) => sum + d.amount, 0)}`);
     if (status.length) article.append(el('p', status.join(' · '), 'muted'));
-    if (own) actionButtons(article, view.actions.filter(({ action: a }) => a.attackerUid === card.uid || a.sourceUid === card.uid || (a.type === 'unhide' && a.targetUid === card.uid)));
+    if (own && view.phase === 'playing') actionButtons(article, view.actions.filter(({ action: a }) => a.attackerUid === card.uid || a.sourceUid === card.uid || (a.type === 'unhide' && a.targetUid === card.uid)));
     grid.append(article);
   }
   section.append(grid); parent.append(section);
@@ -126,13 +126,13 @@ function board(parent, player, own, o) {
 function render() {
   app.replaceChildren();
   if (!view) { setup(); return; }
-  if (view.phase === 'waiting-for-guest' || view.phase === 'waiting-for-turn') {
+  if (view.phase === 'waiting-for-guest') {
     const panel = el('section', undefined, 'handoff');
-    panel.append(el('h2', view.phase === 'waiting-for-guest' ? 'Czekam na drugiego gracza' : `Tura gracza ${view.player + 1}`),
+    panel.append(el('h2', 'Czekam na drugiego gracza'),
       el('p', `Twój pokój: ${view.roomCode} · jesteś graczem ${view.seat + 1}.`),
-      el('p', view.phase === 'waiting-for-guest' ? 'Przekaż kod pokoju drugiej osobie. Nie udostępniaj jej swojego urządzenia ani danych przeglądarki.' : 'Czekam na zakończenie tury przeciwnika.'),
-      button('Odśwież', () => request('/api/view')));
-    if (view.phase === 'waiting-for-guest') panel.append(button('Anuluj pokój', leave));
+      el('p', 'Przekaż kod pokoju drugiej osobie. Nie udostępniaj jej swojego urządzenia ani danych przeglądarki.'),
+      button('Odśwież', () => request('/api/view')),
+      button('Anuluj pokój', leave));
     app.append(panel); return;
   }
   if (view.phase === 'finished') {
@@ -144,15 +144,20 @@ function render() {
       button('Nowy pokój', () => { token = null; localStorage.removeItem('karcianix:seat'); view = null; render(); }, true)); app.append(panel);
   } else {
     const o = view.observation;
-    const panel = el('section'); panel.append(el('h2', `Pokój ${view.roomCode} · Tura ${o.turn} — gracz ${o.player + 1} (${deckNames[view.decks[o.player]]})`));
+    const waiting = view.phase === 'waiting-for-turn';
+    const panel = el('section'); panel.append(el('h2', `Pokój ${view.roomCode} · Tura ${o.turn} — ${waiting ? `ruch gracza ${view.currentPlayer + 1}` : `gracz ${o.player + 1}`} (${deckNames[view.decks[waiting ? view.currentPlayer : o.player]]})`));
+    if (waiting) panel.append(el('p', 'Czekasz na ruch przeciwnika. Twoje pole i ręka są widoczne; ruchy będą dostępne w Twojej turze.', 'status'));
     panel.append(el('p', `Twoje HP: ${o.self.hp} · Energia: ${o.self.energy}/${o.self.maxEnergy} · Ręka: ${o.self.handCount} · Talia: ${o.self.deckCount}`, 'status'),
       el('p', `Przeciwnik: gracz ${2 - o.player} (${deckNames[view.decks[1 - o.player]]}) · HP: ${o.opponent.hp} · Ręka: ${o.opponent.handCount} · Talia: ${o.opponent.deckCount}`));
-    if (o.self.turnsTaken === 1) panel.append(el('p', 'Pierwsza własna tura: ataki są zablokowane.'));
-    panel.append(el('p', o.self.maxEnergy >= o.rules.maxEnergy ? 'Osiągnięto maksymalną energię.' :
-      o.self.energyCreated ? 'Tworzenie energii w tej turze jest już wykorzystane.' : 'Możesz zamienić jedną kartę z ręki na energię.'));
-    const toolbar = el('div', undefined, 'toolbar');
-    toolbar.append(button('Zakończ turę', () => act(view.actions.find(e => e.action.type === 'endTurn').id), true));
-    panel.append(toolbar); rules(panel); app.append(panel);
+    if (!waiting) {
+      if (o.self.turnsTaken === 1) panel.append(el('p', 'Pierwsza własna tura: ataki są zablokowane.'));
+      panel.append(el('p', o.self.maxEnergy >= o.rules.maxEnergy ? 'Osiągnięto maksymalną energię.' :
+        o.self.energyCreated ? 'Tworzenie energii w tej turze jest już wykorzystane.' : 'Możesz zamienić jedną kartę z ręki na energię.'));
+      const toolbar = el('div', undefined, 'toolbar');
+      toolbar.append(button('Zakończ turę', () => act(view.actions.find(e => e.action.type === 'endTurn').id), true));
+      panel.append(toolbar);
+    }
+    rules(panel); app.append(panel);
     board(app, o.opponent, false, o); board(app, o.self, true, o);
     const hand = el('section'); hand.append(el('h2', 'Twoja ręka'));
     const cards = el('div', undefined, 'cards');
@@ -162,9 +167,11 @@ function render() {
       article.append(el('h3', cardTitle(card, i, o.catalogs[o.player])),
         el('p', `Koszt: ${def.cost}${['unit', 'building'].includes(def.kind) ? ` · Atak: ${def.attack} · Życie: ${def.health}` : ''}`, 'status'));
       if (def.text) article.append(el('p', def.text));
-      const entries = view.actions.filter(e => e.action.cardUid === card.uid);
-      actionButtons(article, entries);
-      if (!entries.some(e => e.action.type === 'playCard')) article.append(el('p', 'Zagranie teraz niedostępne: brakuje energii, celu lub wymaganej karty.', 'muted'));
+      if (!waiting) {
+        const entries = view.actions.filter(e => e.action.cardUid === card.uid);
+        actionButtons(article, entries);
+        if (!entries.some(e => e.action.type === 'playCard')) article.append(el('p', 'Zagranie teraz niedostępne: brakuje energii, celu lub wymaganej karty.', 'muted'));
+      }
       cards.append(article);
     }
     hand.append(cards); app.append(hand);
@@ -174,9 +181,11 @@ function render() {
       app.append(known);
     }
   }
-  const history = el('details'); history.append(el('summary', 'Historia ostatnich ruchów'));
-  const log = el('ol'); for (const line of [...view.log].reverse()) log.append(el('li', line));
-  history.append(log); app.append(history);
+  if (view.log) {
+    const history = el('details'); history.append(el('summary', 'Historia ostatnich ruchów'));
+    const log = el('ol'); for (const line of [...view.log].reverse()) log.append(el('li', line));
+    history.append(log); app.append(history);
+  }
 }
 
 if (token) request('/api/view'); else { view = null; render(); }

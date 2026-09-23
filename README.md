@@ -32,8 +32,9 @@ zmienia port. Obaj gracze otwierają ten
 sam adres strony na **osobnych urządzeniach**. Gospodarz wybiera talię i tworzy
 pokój, przekazuje drugiej osobie 12-znakowy kod pokoju. Gość dołącza, wybierając
 własną talię. Gracz rozpoczynający jest losowany. Strona co 2,5 sekundy sprawdza,
-czy przeciwnik skończył turę; nie trzeba ręcznie odświeżać. Każdy widzi wyłącznie
-swoją rękę oraz legalne ruchy w swojej turze.
+czy przeciwnik skończył turę; nie trzeba ręcznie odświeżać. W turze przeciwnika
+widać własną rękę oraz oba pola gry, ale nie można wykonywać ruchów. Każdy widzi
+wyłącznie swoją rękę, a legalne ruchy dostaje w swojej turze.
 
 Po dołączeniu przeglądarka zapamiętuje prywatny identyfikator miejsca gracza,
 więc odświeżenie strony nie przerywa partii. Sam kod pokoju umożliwia tylko

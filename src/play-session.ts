@@ -22,9 +22,18 @@ export class PlaySession {
     if (s.outcome) return { ...common, phase: 'finished' as const, outcome: s.outcome,
       hp: s.players.map(p => p.hp), log: [...this.log] };
     if (this.covered) return { ...common, phase: 'handoff' as const, player: s.currentPlayer, turn: s.turn };
-    return { ...common, phase: 'playing' as const, observation: observe(s), log: [...this.log],
+    return this.viewFor(s.currentPlayer);
+  }
+
+  /** Seat-specific snapshot; a waiting player sees their own hand and the public board. */
+  viewFor(player: PlayerId) {
+    const s = this.game;
+    if (!s || s.outcome || this.covered) throw new PlayError('Nie ma aktywnej tury.', 409);
+    const common = { revision: this.revision, decks: s.decks, observation: observe(s, player),
       boardStats: Object.fromEntries(([0, 1] as const).flatMap(owner => s.players[owner].board.map(u =>
-        [u.uid, { ...getStats(s, owner, u), protected: protectedUnit(s, owner, u) }]))),
+        [u.uid, { ...getStats(s, owner, u), protected: protectedUnit(s, owner, u) }]))) };
+    if (s.currentPlayer !== player) return { ...common, phase: 'waiting-for-turn' as const, currentPlayer: s.currentPlayer };
+    return { ...common, phase: 'playing' as const, log: [...this.log],
       actions: getLegalActions(s).map((action, id) => ({ id, action, label: actionLabel(s, action) })) };
   }
 
