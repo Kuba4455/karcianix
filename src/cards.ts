@@ -18,7 +18,7 @@ export const GAUL_CARDS: readonly CardDefinition[] = [
   card('kakofonix', 'Kakofonix', 'unit', 2, 1, 3, 'Przy wejściu blokuje atak obecnych wrogich jednostek do początku następnej własnej tury.', 'male'),
   card('miecz', 'Miecz', 'equipment', 0, 0, 2, 'Stałe +2 ataku swojej jednostce.'),
   card('tarcza', 'Tarcza', 'equipment', 0, 0, 1, 'Stałe +1 życia swojej jednostce.'),
-  card('magiczny_napoj', 'Magiczny napój', 'spell', 0, 0, 2, '+3/+3 do końca własnej tury, potem stałe -1/-1.'),
+  card('magiczny_napoj', 'Magiczny napój', 'spell', 0, 0, 2, '+3/+3 przez turę zagrywającego i turę przeciwnika; na początku następnej własnej tury stałe -1/-1.'),
   card('kociolek', 'Kociołek', 'building', 0, 3, 4, 'Aura +1/+1 wszystkim własnym jednostkom.'),
   card('palisada', 'Palisada', 'building', 0, 1, 0, 'Blokuje atak gracza, jak każda karta na polu.'),
   card('dzik', 'Dzik', 'unit', 2, 1, 1),
@@ -29,7 +29,7 @@ export const GAUL_CARDS: readonly CardDefinition[] = [
 ];
 export const ROMAN_CARDS: readonly CardDefinition[] = [
   card('cezar', 'Juliusz Cezar', 'unit', 5, 2, 4, 'Chroniony przed atakami, dopóki kontrolujesz inną jednostkę niż Cezar.', 'male'),
-  card('brutus', 'Brutus', 'unit', 3, 2, 3, 'Poświęć inną własną jednostkę: trwałe +1/+1, bez kosztu energii.', 'male'),
+  card('brutus', 'Brutus', 'unit', 3, 2, 3, 'Poświęć inną jednostkę ze swojego pola przed jej atakiem: trwałe +2/0, 0/+2 albo +1/+1.', 'male'),
   card('legionista', 'Legionista', 'unit', 1, 1, 1, '', 'male'),
   card('wieniec', 'Wieniec laurowy', 'equipment', 0, 0, 1, 'Stałe +2 ataku swojej jednostce.'),
   card('katapulta', 'Rzymska katapulta', 'unit', 6, 2, 4),
@@ -37,7 +37,7 @@ export const ROMAN_CARDS: readonly CardDefinition[] = [
   card('zolw', 'Formacja żółwia', 'unit', 0, 4, 2),
   card('zapchlenius', 'Zapchlenius', 'unit', 3, 1, 2, '', 'male'),
   card('popus', 'Gajusz Popus', 'unit', 1, 3, 2, '', 'male'),
-  card('a38', 'Zaświadczenie A38', 'spell', 0, 0, 3, 'Przejmij jednostkę do końca tury. Może od razu atakować; nie można jej poświęcić.'),
+  card('a38', 'Zaświadczenie A38', 'spell', 0, 0, 3, 'Przejmij jednostkę do końca tury. Może zaatakować lub zostać poświęcona przez Brutusa, jeśli jeszcze nie atakowała.'),
   card('pieknus', 'Gajusz Pięknus', 'unit', 2, 4, 3, '', 'male'),
   card('tester_luster', 'Tester Luster', 'unit', 0, 2, 1, '', 'male'),
   card('kalimatis', 'Kalimatis', 'unit', 3, 2, 4, 'Przy wejściu podejrzyj dwie losowe karty ręki rywala albo ukradnij jedną losową.', 'male'),

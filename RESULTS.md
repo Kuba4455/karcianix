@@ -1,4 +1,21 @@
-# Status wersji 0.8.0
+# Status wersji 0.9.0
+
+Magiczny napój daje +3/+3 do początku następnej tury gracza, który go zagrał: premia działa także w turze przeciwnika, a potem wchodzi trwały kac -1/-1. Brutus poświęca inną własną jednostkę ze stołu, która jeszcze nie atakowała, i wybiera trwałe +2/0, +0/+2 albo +1/+1. Przejętą za pomocą A38 jednostkę można poświęcić przed jej atakiem. Domyślne początkowe życie graczy wynosi **15 HP** (wartość zastana w `main`). Weryfikacja: **105 testów zaliczonych** i kontrola typów TypeScript bez błędów.
+
+Przeprowadzono 1000 partii Galowie–Rzymianie na zasadach 0.9.0, przy 125 bazowych ziarnach (`deriveSeed(20260923, "balance-v9:" + i)`), obu kolejnościach talii, obu graczach rozpoczynających i obu przypisaniach botów aggressive/control (osiem gier na ziarno). Wszystkie gry zakończyły się wynikiem, bez remisów i przerwań.
+
+| Wynik | Liczba / 1000 | Odsetek |
+|---|---:|---:|
+| Wygrane Rzymian | 418 | 41,8% |
+| Wygrane Galów | 582 | 58,2% |
+| Rzymianie zaczynają: wygrane | 248 / 500 | 49,6% |
+| Rzymianie odpowiadają: wygrane | 170 / 500 | 34,0% |
+| Rzymianie z botem aggressive: wygrane | 216 / 500 | 43,2% |
+| Rzymianie z botem control: wygrane | 202 / 500 | 40,4% |
+
+W tej symulacji talia Rzymian jest słabsza o **16,4 punktu procentowego** wygranych. Duża różnica między grą jako pierwszy i drugi gracz wskazuje, że kolejność ma istotny wpływ na wynik (pierwszy gracz wygrał 578 z 1000 gier). To wynik **tych botów i tej serii ziaren**, nie gwarancja podobnej przewagi w grze ludzi. Dobrym następnym eksperymentem byłoby sprawdzenie zmian równoważących drugiego gracza; nie zmieniono innych kosztów ani statystyk bez decyzji autora.
+
+## Historyczny status wersji 0.8.0
 
 Geriatrix (3/1 za 1) pozostaje na polu po wykonaniu ataku i ginie dopiero na końcu swojej tury, również bez ataku. Testy zasad i symulacji: **103 zaliczone**; TypeScript bez błędów. Nie wykonano nowego badania balansu po tych zmianach. Wyniki poniżej są historyczne.
 

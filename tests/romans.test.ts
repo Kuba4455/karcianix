@@ -95,17 +95,25 @@ describe('Rzymianie', () => {
     expect(protectedUnit(s, 1, first)).toBe(false);
     expect(protectedUnit(s, 1, second)).toBe(false);
   });
-  test('Brutus poświęca wielokrotnie bez energii, także od razu po wejściu', () => {
+  test('Brutus wybiera trzy premie z jednostek na polu przed ich atakiem, także po swoim wejściu', () => {
     const s = scenario();
     const b = play(s, 'brutus');
-    for (let i = 0; i < 2; i++) {
+    for (const bonus of ['attack', 'health', 'both'] as const) {
       const l = unit(s, 0, 'legionista');
-      applyAction(s, { type: 'sacrifice', sourceUid: b.uid, targetUid: l.uid });
+      expect(getLegalActions(s)).toContainEqual({ type: 'sacrifice', sourceUid: b.uid, targetUid: l.uid, bonus });
+      applyAction(s, { type: 'sacrifice', sourceUid: b.uid, targetUid: l.uid, bonus });
       expect(s.players[0].discard.some(c => c.uid === l.uid)).toBe(true);
     }
-    expect(getStats(s, 0, b)).toMatchObject({ attack: 5, health: 4 });
+    expect(getStats(s, 0, b)).toMatchObject({ attack: 6, health: 5 });
     expect(s.players[0].energy).toBe(7);
-    expect(getLegalActions(s)).not.toContainEqual({ type: 'sacrifice', sourceUid: b.uid, targetUid: b.uid });
+    expect(getLegalActions(s).some(a => a.type === 'sacrifice' && a.targetUid === b.uid)).toBe(false);
+    const attacker = unit(s, 0, 'lew');
+    const building = unit(s, 0, 'koloseum');
+    const inHand = hand(s, 0, 'ceplus');
+    applyAction(s, { type: 'attack', attackerUid: attacker.uid, targetUid: 'player:1' });
+    expect(getLegalActions(s).some(a => a.type === 'sacrifice' && a.targetUid === attacker.uid)).toBe(false);
+    expect(getLegalActions(s).some(a => a.type === 'sacrifice' && a.targetUid === inHand.uid)).toBe(false);
+    expect(getLegalActions(s)).toContainEqual({ type: 'sacrifice', sourceUid: b.uid, targetUid: building.uid, bonus: 'health' });
   });
   test('Antywirus wybiera liczbę Legionistów, nie płaci za nich i nie ponawia efektu', () => {
     const s = scenario();
@@ -117,19 +125,33 @@ describe('Rzymianie', () => {
     end(s); end(s);
     expect(s.players[0].board.filter(c => c.cardId === 'legionista')).toHaveLength(2);
   });
-  test('A38 pozwala od razu zaatakować, blokuje poświęcenie i zwraca jednostkę', () => {
+  test('A38 pozwala zaatakować, ale po ataku zabrania poświęcenia i zwraca ocalałą jednostkę', () => {
     const s = scenario();
     const target = unit(s, 1, 'ceplus'); target.attacksUsed = 1; target.enteredTurn = s.turn;
     const b = unit(s, 0, 'brutus');
     play(s, 'a38', { targetUid: target.uid });
     expect(getLegalActions(s)).toContainEqual({ type: 'attack', attackerUid: target.uid, targetUid: 'player:1' });
-    expect(getLegalActions(s)).not.toContainEqual({ type: 'sacrifice', sourceUid: b.uid, targetUid: target.uid });
+    expect(getLegalActions(s)).toContainEqual({ type: 'sacrifice', sourceUid: b.uid, targetUid: target.uid, bonus: 'attack' });
+    applyAction(s, { type: 'attack', attackerUid: target.uid, targetUid: 'player:1' });
+    expect(getLegalActions(s).some(a => a.type === 'sacrifice' && a.targetUid === target.uid)).toBe(false);
     play(s, 'hasta', { targetUid: target.uid });
     target.damage = 1;
     end(s);
     expect(s.players[1].board).toContain(target);
     expect(target.borrowedFrom).toBeUndefined();
     expect(getStats(s, 1, target)).toMatchObject({ attack: 5, health: 1 });
+  });
+  test('Brutus poświęca przejętą A38 jednostkę przed atakiem; karta wraca do stosu właściciela', () => {
+    const s = scenario();
+    const stolen = unit(s, 1, 'legionista');
+    const brutus = unit(s, 0, 'brutus');
+    play(s, 'a38', { targetUid: stolen.uid });
+    applyAction(s, { type: 'sacrifice', sourceUid: brutus.uid, targetUid: stolen.uid, bonus: 'health' });
+    expect(getStats(s, 0, brutus)).toMatchObject({ attack: 3, health: 4 });
+    expect(s.players[1].discard.some(c => c.uid === stolen.uid)).toBe(true);
+    expect(s.players[0].discard.some(c => c.uid === stolen.uid)).toBe(false);
+    end(s);
+    expect(s.players[1].board.some(c => c.uid === stolen.uid)).toBe(false);
   });
   test('śmierć przejętej jednostki trafia do stosu właściciela', () => {
     const s = scenario();

@@ -40,7 +40,7 @@ export class PlaySession {
     const first = input.firstPlayer === 'random' ? randomInt(2) as PlayerId : input.firstPlayer as PlayerId;
     this.game = createGame({ decks: input.decks as [DeckId, DeckId], firstPlayer: first, seed: randomInt(0x100000000) });
     this.covered = true;
-    this.log = ['Rozpoczęto nową partię. Obaj gracze mają 12 HP.'];
+    this.log = [`Rozpoczęto nową partię. Obaj gracze mają ${this.game.rules.startingHp} HP.`];
     this.revision++;
     return this.view();
   }
@@ -89,7 +89,7 @@ function actionLabel(s: GameState, action: Action): string {
     case 'endTurn': return 'Zakończ turę';
     case 'createEnergy': return `Zamień ${cardName(action.cardUid)} na energię (+1 maksimum i dostępnej energii)`;
     case 'attack': return `Atak: ${cardName(action.attackerUid)} → ${target(action.targetUid)}`;
-    case 'sacrifice': return `${cardName(action.sourceUid)}: poświęć ${cardName(action.targetUid)} (+1/+1)`;
+    case 'sacrifice': return `${cardName(action.sourceUid)}: poświęć ${cardName(action.targetUid)} (${action.bonus === 'attack' ? '+2 ataku' : action.bonus === 'health' ? '+2 życia' : '+1/+1'})`;
     case 'hide': return `${cardName(action.sourceUid)}: schowaj ${cardName(action.targetUid)} (2 energii)`;
     case 'unhide': return `Odsłoń ${cardName(action.targetUid)} (bez kosztu)`;
     case 'playCard': {

@@ -7,8 +7,8 @@ import type { runExperiment } from './experiments.ts';
 import type { GameResult, Summary } from './simulate.ts';
 import type { BotKind, CardId, CardPatch, Rules } from './types.ts';
 
-export const ENGINE_VERSION = '0.8.0';
-export const RULESET_VERSION = 'galowie-rzymianie-v8';
+export const ENGINE_VERSION = '0.9.0';
+export const RULESET_VERSION = 'galowie-rzymianie-v9';
 export const percentage = (x: number | null) => x === null ? 'brak danych' : `${(x * 100).toFixed(2)}%`;
 export interface ReportMetadata {
   mode: 'simulate' | 'experiment';
