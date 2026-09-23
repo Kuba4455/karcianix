@@ -57,7 +57,7 @@ describe('Podstawowe zasady', () => {
       stunRetaliation: true,
     });
   });
-  test.each([0, 1] as const)('brak ataków obu graczy w pierwszej własnej turze; zaczyna %s', firstPlayer => {
+  test.each([0, 1] as const)('tylko rozpoczynający nie atakuje w pierwszej własnej turze; zaczyna %s', firstPlayer => {
     const s = createGame({ firstPlayer });
     const units: Permanent[] = [];
     for (let turn = 0; turn < 2; turn++) {
@@ -66,15 +66,32 @@ describe('Podstawowe zasady', () => {
       applyAction(s, { type: 'createEnergy', cardUid: s.players[owner].hand[0].uid });
       const g = play(s, 'gesi')!;
       units.push(g);
-      expect(getLegalActions(s).some(a => a.type === 'attack')).toBe(false);
-      expect(() => hit(s, g, playerTarget(owner === 0 ? 1 : 0))).toThrow('Nielegalny');
-      if (turn === 1) expect(() => hit(s, g, units[0])).toThrow('Nielegalny');
+      if (turn === 0) {
+        expect(getLegalActions(s).some(a => a.type === 'attack')).toBe(false);
+        expect(() => hit(s, g, playerTarget(owner === 0 ? 1 : 0))).toThrow('Nielegalny');
+      } else {
+        expect(getLegalActions(s)).toContainEqual({ type: 'attack', attackerUid: g.uid, targetUid: units[0].uid });
+        expect(() => hit(s, g, playerTarget(owner === 0 ? 1 : 0))).toThrow('Nielegalny');
+      }
       end(s);
     }
     expect(s.players.map(p => p.hp)).toEqual([15, 15]);
     expect(getLegalActions(s)).toContainEqual({ type: 'attack', attackerUid: units[0].uid, targetUid: units[1].uid });
     end(s);
     expect(getLegalActions(s)).toContainEqual({ type: 'attack', attackerUid: units[1].uid, targetUid: units[0].uid });
+  });
+  test('drugi gracz może atakować gracza bez kart na polu już w swojej pierwszej turze', () => {
+    const s = createGame({ firstPlayer: 1 });
+    end(s);
+    const g = unit(s, 0, 'gesi');
+    expect(getLegalActions(s)).toContainEqual({ type: 'attack', attackerUid: g.uid, targetUid: playerTarget(1) });
+    hit(s, g, playerTarget(1));
+    expect(s.players[1].hp).toBe(14);
+  });
+  test('przełącznik allowFirstTurnAttacks pozwala też rozpoczynającemu atakować od razu', () => {
+    const s = createGame({ firstPlayer: 1, rules: { allowFirstTurnAttacks: true } });
+    const g = unit(s, 1, 'gesi');
+    expect(getLegalActions(s)).toContainEqual({ type: 'attack', attackerUid: g.uid, targetUid: playerTarget(0) });
   });
   test('20 rodzajów kart, po 3 kopie w każdej osobnej talii, 6 kart i 15 HP na start', () => {
     const s = createGame({ seed: 7 });

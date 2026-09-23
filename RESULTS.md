@@ -1,4 +1,8 @@
-# Status wersji 0.9.0
+# Status wersji 0.10.0
+
+W pierwszej turze tylko gracz rozpoczynający ma zakaz ataku; drugi gracz może atakować już w swojej pierwszej turze. Weryfikacja: **107 testów zaliczonych**, kontrola typów TypeScript bez błędów. Nie uruchomiono nowej serii do oceny balansu po tej zmianie. Poniższe wyniki 1000 gier dotyczą wcześniejszych zasad i nie opisują balansu wersji 0.10.0.
+
+## Historyczny status wersji 0.9.0
 
 Magiczny napój daje +3/+3 do początku następnej tury gracza, który go zagrał: premia działa także w turze przeciwnika, a potem wchodzi trwały kac -1/-1. Brutus poświęca inną własną jednostkę ze stołu, która jeszcze nie atakowała, i wybiera trwałe +2/0, +0/+2 albo +1/+1. Przejętą za pomocą A38 jednostkę można poświęcić przed jej atakiem. Domyślne początkowe życie graczy wynosi **15 HP** (wartość zastana w `main`). Weryfikacja: **105 testów zaliczonych** i kontrola typów TypeScript bez błędów.
 

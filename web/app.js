@@ -81,7 +81,7 @@ function rules(parent) {
     'Raz na turę możesz zamienić kartę z ręki na energię. Zwiększa to maksimum i dostępną energię o 1, do limitu 10. Energia odnawia się co turę.',
     'Na karcie w ręce wybierz „Zagraj…” i cel albo zamianę na energię. Zapłacisz podany koszt. Widać tylko legalne ruchy.',
     'Na własnej jednostce wybierz cel ataku lub zdolność. Przeciwnika można zaatakować dopiero po opróżnieniu jego pola.',
-    'W pierwszej własnej turze żaden gracz nie atakuje. Lew i Ceplus czekają również w turze swojego wystawienia.',
+    'Tylko gracz rozpoczynający nie atakuje w swojej pierwszej turze. Drugi gracz może atakować od pierwszej własnej tury. Lew i Ceplus czekają również w turze swojego wystawienia.',
     'Zakończ turę i zaczekaj na ruch drugiej osoby. Każdy widzi tylko własną rękę.',
     'Wygrywasz, gdy przeciwnik straci HP lub nie może dobrać wymaganej karty. Partie działają wyłącznie w pamięci serwera i wygasają po czterech godzinach bezczynności.',
   ]) list.append(el('li', line));
@@ -150,7 +150,7 @@ function render() {
     panel.append(el('p', `Twoje HP: ${o.self.hp} · Energia: ${o.self.energy}/${o.self.maxEnergy} · Ręka: ${o.self.handCount} · Talia: ${o.self.deckCount}`, 'status'),
       el('p', `Przeciwnik: gracz ${2 - o.player} (${deckNames[view.decks[1 - o.player]]}) · HP: ${o.opponent.hp} · Ręka: ${o.opponent.handCount} · Talia: ${o.opponent.deckCount}`));
     if (!waiting) {
-      if (o.self.turnsTaken === 1) panel.append(el('p', 'Pierwsza własna tura: ataki są zablokowane.'));
+      if (o.turn === 1 && !o.rules.allowFirstTurnAttacks) panel.append(el('p', 'Pierwsza tura gracza rozpoczynającego: ataki są zablokowane.'));
       panel.append(el('p', o.self.maxEnergy >= o.rules.maxEnergy ? 'Osiągnięto maksymalną energię.' :
         o.self.energyCreated ? 'Tworzenie energii w tej turze jest już wykorzystane.' : 'Możesz zamienić jedną kartę z ręki na energię.'));
       const toolbar = el('div', undefined, 'toolbar');

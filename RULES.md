@@ -1,4 +1,4 @@
-# Zasady silnika — galowie-rzymianie-v9
+# Zasady silnika — galowie-rzymianie-v10
 
 Druga talia i zatwierdzone zdolności: [Rzymianie](ROMANS.md). Każdy gracz niezależnie wybiera Galów lub Rzymian; obie talie mają 60 kart (20 × 3).
 
@@ -10,9 +10,9 @@ Druga talia i zatwierdzone zdolności: [Rzymianie](ROMANS.md). Każdy gracz niez
 - Gęsi mają 1 ataku, 2 życia i kosztują 1 energię.
 - Raz we własnej turze można dobrowolnie przepalić jedną kartę z ręki na energię.
   Energia odnawia się na początku własnej tury, maksymalnie 10.
-- W pierwszej własnej turze żaden gracz nie może deklarować ataków: ani na gracza, ani na jego jednostki lub budowle. Może tworzyć energię i zagrywać karty.
+- W pierwszej turze gracz rozpoczynający nie może deklarować ataków: ani na gracza, ani na jego jednostki lub budowle. Drugi gracz może atakować już w swojej pierwszej turze. Obaj mogą tworzyć energię i zagrywać karty.
 - Zablokowana jednostka nie oddaje obrażeń do chwili odblokowania.
-- Od drugiej własnej tury nowe jednostki mogą atakować od razu.
+- Po pierwszej turze gracza rozpoczynającego nowe jednostki mogą atakować od razu (z wyjątkiem indywidualnych ograniczeń kart).
 - Zanim zaatakuje się gracza, trzeba usunąć karty z jego pola, w tym palisadę.
 - Obrażenia w walce są jednoczesne i zostają między turami.
 - Geriatrix ma 3 ataku i 1 życia. Umiera na końcu swojej tury, nawet jeśli nie atakował.
@@ -33,7 +33,7 @@ ustalenia autora. Ich zmiana może znacząco zmienić wyniki balansu.
 | Dobieranie | Drugi gracz obowiązkowo dobiera 1 w pierwszej własnej turze; od drugiej własnej tury obaj obowiązkowo po 1; dobrowolne jest tworzenie energii |
 | Start energii | 0; nowy zasób zwiększa jednocześnie maksimum i dostępną energię o 1 |
 | Przepalona karta | Osobna strefa energii, nie ręka ani stos kart odrzuconych; bez późniejszego użycia |
-| Ataki | Zakaz w pierwszej własnej turze obu graczy; potem jedna deklaracja ataku każdej jednostki na własną turę; Asterix ma w niej do dwóch uderzeń |
+| Ataki | Zakaz tylko w pierwszej turze gracza rozpoczynającego; drugi gracz może zaatakować w pierwszej własnej turze; potem jedna deklaracja ataku każdej jednostki na własną turę; Asterix ma w niej do dwóch uderzeń |
 | Cel ataku | Dowolna legalna karta wrogiego pola; dopiero gdy całe pole jest puste, gracz |
 | Budowle | Kociołek i Palisada blokują gracza, ale nie atakują; trucizna i premie „jednostkom” ich nie obejmują |
 | Pole i ręka | Bez limitu rozmiaru, bez mulligana, bez reakcji podczas ruchu rywala |
@@ -123,10 +123,12 @@ i testów; nie wszystkie założenia mają przełącznik.
 
 Wersja 0.2.0: `secondPlayerFirstDraw: 1` określa dodatkowe dobieranie drugiego gracza w pierwszej turze. Zasada zależy od kolejności gry, nie od indeksu miejsca 0/1.
 
-Wersja 0.3.0: `startingHp: 15` ustala początkowe i maksymalne HP gracza. `allowFirstTurnAttacks: false` blokuje deklaracje ataków podczas pierwszej własnej tury każdego gracza. Od drugiej tury blokada znika. Nie wyłącza zdolności pasywnych ani normalnych obrażeń zwrotnych, gdy ataki są już możliwe.
+Wersja 0.3.0 (historycznie): `startingHp: 15` ustala początkowe i maksymalne HP gracza. Wtedy `allowFirstTurnAttacks: false` blokowało ataki obu graczy w ich pierwszych własnych turach. Od wersji 0.10.0 blokuje wyłącznie pierwszą turę rozpoczynającego. Nie wyłącza zdolności pasywnych ani normalnych obrażeń zwrotnych, gdy ataki są już możliwe.
 
 Wersja 0.5.0: domyślne zasady to `startingHp: 12`, `openingHand: 6`, `drawPerTurn: 1`, `secondPlayerFirstDraw: 1`, `allowFirstTurnAttacks: false`, `maxEnergy: 10` i `stunRetaliation: true`. Falballa i Dobromina używają automatycznej premii kierunkowej zamiast postaw.
 
 Wersja 0.6.0: Gęsi mają 1/2 za 1, Miecz kosztuje 2, Obelix kosztuje 5, Kakofonix ma 2/1 za 3, a Spadające niebo kosztuje 3. Boty agresywny i kontrolny oceniają również najlepszy kolejny ruch w tej samej turze.
 
 Wersja 0.8.0: Geriatrix ginie na końcu swojej tury bez względu na to, czy wykonał atak. Przeżywa własny atak, o ile nie otrzyma w nim śmiertelnych obrażeń. Kalimatis kosztuje 4, Gajusz Pięknus ma 2/4, Kodeks kosztuje 1; Cezarów nie chronią inni Cezarowie, a Koloseum nie chowa Koloseum. Historyczne raporty korzystają z wcześniejszej wersji silnika i nie są odtwarzane przez tę wersję.
+
+Wersja 0.10.0: przy `allowFirstTurnAttacks: false` zakaz ataków dotyczy tylko gracza rozpoczynającego w pierwszej turze całej gry; `true` pozwala również jemu atakować. Drugi gracz może atakować jednostkę albo gracza (jeśli pole przeciwnika jest puste) w swojej pierwszej turze.
