@@ -49,7 +49,6 @@ function attackScore(o: PlayerObservation, action: Extract<Action, { type: 'atta
     if (!(twice && i === 0)) aHp -= incoming;
     if (dHp <= 0 || aHp <= 0) break;
   }
-  if (a.cardId === 'geriatrix' && aDef.abilityEnabled) aHp = 0;
   const killValue = dHp <= 0 ? boardValue(o, d, false, control) + 2 : 0;
   const lossValue = aHp <= 0 ? boardValue(o, a, true, control) * (control ? 1.15 : 0.8) : 0;
   const opensFace = dHp <= 0 && o.opponent.board.length === 1 ? 4 : 0;

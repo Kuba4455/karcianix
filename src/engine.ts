@@ -84,7 +84,7 @@ export function combatBonus(def: CardDefinition, against: CardDefinition): numbe
 export function protectedUnit(s: GameState, owner: PlayerId, unit: Permanent): boolean {
   if (unit.hiddenBy) return true;
   if (unit.cardId === 'cezar' && s.catalogs[owner][unit.cardId].abilityEnabled &&
-    s.players[owner].board.some(u => u.uid !== unit.uid && s.catalogs[owner][u.cardId].kind === 'unit')) return true;
+    s.players[owner].board.some(u => u.uid !== unit.uid && u.cardId !== 'cezar' && s.catalogs[owner][u.cardId].kind === 'unit')) return true;
   if (!unit.protectedBy || !s.catalogs[owner][unit.cardId].abilityEnabled) return false;
   return s.players[owner].board.some(x => x.uid === unit.protectedBy &&
     x.modifiers.some(m => m.sourceUid === unit.uid && m.origin === 'panoramix'));
@@ -190,6 +190,13 @@ function endTurn(s: GameState): void {
     for (let i = 0; i < count; i++) u.modifiers.push({ origin: 'magiczny_napoj', attack: -1, health: -1 });
   }
   sweepDeaths(s);
+  // Geriatrix stays on the field through his attack and dies only when his
+  // controller finishes the turn, whether he attacked or not.
+  const owner = s.currentPlayer;
+  for (const u of s.players[owner].board) if (u.cardId === 'geriatrix' && s.catalogs[owner][u.cardId].abilityEnabled) {
+    u.damage = Math.max(u.damage, getStats(s, owner, u).maxHealth);
+  }
+  sweepDeaths(s);
   // Return surviving borrowed units before the opponent's start-of-turn effects.
   for (const owner of [0, 1] as const) {
     for (const u of [...s.players[owner].board]) if (u.borrowedFrom !== undefined) {
@@ -253,7 +260,7 @@ export function getLegalActions(s: GameState): Action[] {
         actions.push({ type: 'sacrifice', sourceUid: u.uid, targetUid: target.uid });
     }
     if (def.abilityEnabled && u.cardId === 'koloseum' && self.energy >= 2) for (const target of self.board) {
-      if (target.uid !== u.uid && !target.hiddenBy && s.catalogs[owner][target.cardId].kind === 'unit')
+      if (target.uid !== u.uid && target.cardId !== 'koloseum' && !target.hiddenBy && s.catalogs[owner][target.cardId].kind === 'unit')
         actions.push({ type: 'hide', sourceUid: u.uid, targetUid: target.uid });
     }
     if (u.hiddenBy || (def.abilityEnabled && ['ceplus', 'lew'].includes(u.cardId) && u.enteredTurn === s.turn)) continue;
@@ -412,9 +419,6 @@ function attack(s: GameState, action: Extract<Action, { type: 'attack' }>): void
       unitDamage(s, enemy, defender.cardId, owner, attacker, dAttack - aShield);
       sweepDeaths(s);
     }
-  }
-  if (attacker.cardId === 'geriatrix' && aDef.abilityEnabled && s.players[owner].board.some(u => u.uid === attacker.uid)) {
-    attacker.damage = Math.max(attacker.damage, getStats(s, owner, attacker).maxHealth);
   }
   sweepDeaths(s);
 }

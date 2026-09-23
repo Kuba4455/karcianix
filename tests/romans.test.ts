@@ -43,8 +43,8 @@ describe('Rzymianie', () => {
     expect(DECKS.rzymianie.map(id => [id, catalog[id].attack, catalog[id].health, catalog[id].cost])).toEqual([
       ['cezar', 5, 2, 4], ['brutus', 3, 2, 3], ['legionista', 1, 1, 1], ['wieniec', 0, 0, 1],
       ['katapulta', 6, 2, 4], ['antywirus', 2, 2, 3], ['zolw', 0, 4, 2], ['zapchlenius', 3, 1, 2],
-      ['popus', 1, 3, 2], ['a38', 0, 0, 3], ['pieknus', 2, 3, 3], ['tester_luster', 0, 2, 1],
-      ['kalimatis', 3, 2, 3], ['ceplus', 4, 2, 2], ['tarcza_rzymska', 0, 0, 2], ['kodeks', 0, 0, 2],
+      ['popus', 1, 3, 2], ['a38', 0, 0, 3], ['pieknus', 2, 4, 3], ['tester_luster', 0, 2, 1],
+      ['kalimatis', 3, 2, 4], ['ceplus', 4, 2, 2], ['tarcza_rzymska', 0, 0, 2], ['kodeks', 0, 0, 1],
       ['hasta', 0, 0, 1], ['lew', 2, 2, 1], ['koloseum', 0, 5, 4], ['oszczep', 0, 0, 1],
     ]);
   });
@@ -78,6 +78,22 @@ describe('Rzymianie', () => {
     unit(s, 1, 'legionista');
     play(s, 'oszczep', { targetUid: caesar.uid });
     expect(s.players[1].board).not.toContain(caesar);
+  });
+  test('Cezary bez innych jednostek nie chronią się wzajemnie; Legionista chroni obu', () => {
+    const s = scenario();
+    const first = unit(s, 1, 'cezar');
+    const second = unit(s, 1, 'cezar');
+    const attacker = unit(s, 0, 'legionista');
+    expect(protectedUnit(s, 1, first)).toBe(false);
+    expect(protectedUnit(s, 1, second)).toBe(false);
+    expect(getLegalActions(s)).toContainEqual({ type: 'attack', attackerUid: attacker.uid, targetUid: first.uid });
+    expect(getLegalActions(s)).toContainEqual({ type: 'attack', attackerUid: attacker.uid, targetUid: second.uid });
+    const protector = unit(s, 1, 'legionista');
+    expect(protectedUnit(s, 1, first)).toBe(true);
+    expect(protectedUnit(s, 1, second)).toBe(true);
+    protector.damage = 1; sweepDeaths(s);
+    expect(protectedUnit(s, 1, first)).toBe(false);
+    expect(protectedUnit(s, 1, second)).toBe(false);
   });
   test('Brutus poświęca wielokrotnie bez energii, także od razu po wejściu', () => {
     const s = scenario();
@@ -183,14 +199,14 @@ describe('Rzymianie', () => {
     col.damage = 5; sweepDeaths(s);
     expect(l.hiddenBy).toBeUndefined();
   });
-  test('schowana jednostka nadal podlega truciznie; dwa Kolosea mogą chronić się wzajemnie', () => {
+  test('Koloseum nie chowa Koloseum; schowana zwykła jednostka nadal podlega truciznie', () => {
     const s = scenario(true); const a = unit(s, 0, 'koloseum'); const b = unit(s, 0, 'koloseum');
     const l = unit(s, 0, 'legionista'); unit(s, 1, 'ahigienix');
-    applyAction(s, { type: 'hide', sourceUid: a.uid, targetUid: b.uid });
-    applyAction(s, { type: 'hide', sourceUid: b.uid, targetUid: a.uid });
+    expect(getLegalActions(s)).not.toContainEqual({ type: 'hide', sourceUid: a.uid, targetUid: b.uid });
+    expect(getLegalActions(s)).not.toContainEqual({ type: 'hide', sourceUid: b.uid, targetUid: a.uid });
+    expect(() => applyAction(s, { type: 'hide', sourceUid: a.uid, targetUid: b.uid })).toThrow('Nielegalny');
     applyAction(s, { type: 'hide', sourceUid: a.uid, targetUid: l.uid });
-    expect(protectedUnit(s, 0, a)).toBe(true);
-    expect(protectedUnit(s, 0, b)).toBe(true);
+    expect(protectedUnit(s, 0, l)).toBe(true);
     end(s); end(s);
     expect(s.players[0].board).not.toContain(l);
   });

@@ -203,20 +203,43 @@ describe('Podstawowe zasady', () => {
 });
 
 describe('Zdolności jednostek', () => {
-  test('Geriatrix ma 3/1, pozostaje bez ataku i ginie po ataku bezpośrednim', () => {
+  test('Geriatrix ma 3/1 i ginie na końcu tury nawet bez wykonania ataku', () => {
     const s = scenario();
     const a = unit(s, 0, 'geriatrix');
     expect(getStats(s, 0, a)).toEqual({ attack: 3, health: 1, maxHealth: 1 });
-    end(s); end(s);
     expect(s.players[0].board).toContain(a);
+    end(s);
+    expect(s.players[0].board).not.toContain(a);
+    expect(s.players[0].discard.some(c => c.uid === a.uid)).toBe(true);
+  });
+  test('Geriatrix atakuje bezpośrednio, przeżywa atak i ginie dopiero po zakończeniu tury', () => {
+    const s = scenario();
+    const a = unit(s, 0, 'geriatrix');
     hit(s, a, playerTarget(1));
     expect(s.players[1].hp).toBe(9);
+    expect(s.players[0].board).toContain(a);
+    end(s);
     expect(s.players[0].board).not.toContain(a);
   });
-  test('Geriatrix ginie po ataku nawet bez obrażeń zwrotnych', () => {
+  test('Geriatrix pozostaje na polu po ataku karty bez obrażeń zwrotnych', () => {
     const s = scenario();
-    hit(s, unit(s, 0, 'geriatrix'), unit(s, 1, 'palisada'));
+    const a = unit(s, 0, 'geriatrix');
+    hit(s, a, unit(s, 1, 'palisada'));
+    expect(s.players.map(p => p.board.length)).toEqual([1, 0]);
+    end(s);
     expect(s.players.map(p => p.board.length)).toEqual([0, 0]);
+  });
+  test('Geriatrix może zginąć wcześniej od obrażeń, a wyłączenie zdolności zapobiega śmierci na końcu tury', () => {
+    const s = scenario();
+    const a = unit(s, 0, 'geriatrix');
+    hit(s, a, unit(s, 1, 'dzik'));
+    expect(s.players[0].board).not.toContain(a);
+
+    const withoutAbility = scenario();
+    withoutAbility.catalogs[0].geriatrix.abilityEnabled = false;
+    const survivor = unit(withoutAbility, 0, 'geriatrix');
+    end(withoutAbility);
+    expect(withoutAbility.players[0].board).toContain(survivor);
   });
   test('Asterix uderza tego samego przeciwnika dwa razy, ignoruje tylko pierwszą kontrę', () => {
     const s = scenario();

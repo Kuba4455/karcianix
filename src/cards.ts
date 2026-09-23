@@ -14,7 +14,7 @@ export const GAUL_CARDS: readonly CardDefinition[] = [
   card('asparanoix', 'Asparanoix', 'unit', 2, 4, 3, 'Przy wejściu osłabia kartę rywala o -1/-1, -2/0 lub 0/-2, dopóki żyje.', 'male'),
   card('ahigienix', 'Ahigienix', 'unit', 1, 4, 3, 'Na początku tury rywala: 1 obrażenie każdej jego jednostce.', 'male'),
   card('automatix', 'Automatix', 'unit', 1, 5, 3, '', 'male'),
-  card('geriatrix', 'Geriatrix', 'unit', 3, 1, 1, 'Ginę po rozliczeniu własnego ataku.', 'male'),
+  card('geriatrix', 'Geriatrix', 'unit', 3, 1, 1, 'Umiera na końcu swojej tury, niezależnie od tego, czy atakował.', 'male'),
   card('kakofonix', 'Kakofonix', 'unit', 2, 1, 3, 'Przy wejściu blokuje atak obecnych wrogich jednostek do początku następnej własnej tury.', 'male'),
   card('miecz', 'Miecz', 'equipment', 0, 0, 2, 'Stałe +2 ataku swojej jednostce.'),
   card('tarcza', 'Tarcza', 'equipment', 0, 0, 1, 'Stałe +1 życia swojej jednostce.'),
@@ -28,7 +28,7 @@ export const GAUL_CARDS: readonly CardDefinition[] = [
   card('gesi', 'Gęsi', 'unit', 1, 2, 1),
 ];
 export const ROMAN_CARDS: readonly CardDefinition[] = [
-  card('cezar', 'Juliusz Cezar', 'unit', 5, 2, 4, 'Chroniony przed atakami, dopóki kontrolujesz inną jednostkę.', 'male'),
+  card('cezar', 'Juliusz Cezar', 'unit', 5, 2, 4, 'Chroniony przed atakami, dopóki kontrolujesz inną jednostkę niż Cezar.', 'male'),
   card('brutus', 'Brutus', 'unit', 3, 2, 3, 'Poświęć inną własną jednostkę: trwałe +1/+1, bez kosztu energii.', 'male'),
   card('legionista', 'Legionista', 'unit', 1, 1, 1, '', 'male'),
   card('wieniec', 'Wieniec laurowy', 'equipment', 0, 0, 1, 'Stałe +2 ataku swojej jednostce.'),
@@ -38,15 +38,15 @@ export const ROMAN_CARDS: readonly CardDefinition[] = [
   card('zapchlenius', 'Zapchlenius', 'unit', 3, 1, 2, '', 'male'),
   card('popus', 'Gajusz Popus', 'unit', 1, 3, 2, '', 'male'),
   card('a38', 'Zaświadczenie A38', 'spell', 0, 0, 3, 'Przejmij jednostkę do końca tury. Może od razu atakować; nie można jej poświęcić.'),
-  card('pieknus', 'Gajusz Pięknus', 'unit', 2, 3, 3, '', 'male'),
+  card('pieknus', 'Gajusz Pięknus', 'unit', 2, 4, 3, '', 'male'),
   card('tester_luster', 'Tester Luster', 'unit', 0, 2, 1, '', 'male'),
-  card('kalimatis', 'Kalimatis', 'unit', 3, 2, 3, 'Przy wejściu podejrzyj dwie losowe karty ręki rywala albo ukradnij jedną losową.', 'male'),
+  card('kalimatis', 'Kalimatis', 'unit', 3, 2, 4, 'Przy wejściu podejrzyj dwie losowe karty ręki rywala albo ukradnij jedną losową.', 'male'),
   card('ceplus', 'Gajusz Ceplus', 'unit', 4, 2, 2, 'Może atakować od następnej własnej tury.', 'male'),
   card('tarcza_rzymska', 'Tarcza rzymska', 'equipment', 0, 0, 2, 'Stałe +2 życia swojej jednostce.'),
-  card('kodeks', 'Kodeks prawa rzymskiego', 'spell', 0, 0, 2, 'Odrzuć inną kartę z ręki, aby dobrać dwie.'),
+  card('kodeks', 'Kodeks prawa rzymskiego', 'spell', 0, 0, 1, 'Odrzuć inną kartę z ręki, aby dobrać dwie.'),
   card('hasta', 'Hasta', 'equipment', 0, 0, 1, 'Stałe +1 ataku swojej jednostce.'),
   card('lew', 'Lew', 'unit', 2, 2, 1, 'Może atakować od następnej własnej tury.'),
-  card('koloseum', 'Koloseum', 'unit', 0, 5, 4, 'Za 2 energii schowaj inną jednostkę; nie atakuje i jest chroniona przed atakami. Wyjście darmowe.'),
+  card('koloseum', 'Koloseum', 'unit', 0, 5, 4, 'Za 2 energii schowaj własną jednostkę inną niż Koloseum; nie atakuje i jest chroniona przed atakami. Wyjście darmowe.'),
   card('oszczep', 'Rzut oszczepem', 'spell', 0, 0, 1, '2 obrażenia wrogiej karcie. Ocalałej usuwa te obrażenia na początku tury jej kontrolera.'),
 ];
 export const CARDS = [...GAUL_CARDS, ...ROMAN_CARDS];
