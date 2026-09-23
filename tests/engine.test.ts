@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { CARD_IDS, createCatalog } from '../src/cards.ts';
+import { DECKS, createCatalog } from '../src/cards.ts';
 import {
   applyAction, createGame, getLegalActions, getStats, makePermanent, observe,
   playerTarget, sweepDeaths,
@@ -78,12 +78,12 @@ describe('Podstawowe zasady', () => {
   });
   test('20 rodzajów kart, po 3 kopie w każdej osobnej talii, 6 kart i 12 HP na start', () => {
     const s = createGame({ seed: 7 });
-    expect(CARD_IDS).toHaveLength(20);
+    expect(DECKS.galowie).toHaveLength(20);
     for (const p of s.players) {
       expect(p.hp).toBe(12);
       expect(p.hand).toHaveLength(6);
       expect(p.deck).toHaveLength(54);
-      for (const id of CARD_IDS) expect([...p.hand, ...p.deck].filter(c => c.cardId === id)).toHaveLength(3);
+      for (const id of DECKS.galowie) expect([...p.hand, ...p.deck].filter(c => c.cardId === id)).toHaveLength(3);
     }
     expect(s.players[0].hand).not.toEqual(s.players[1].hand);
   });

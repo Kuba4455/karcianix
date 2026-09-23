@@ -2,7 +2,7 @@ import { parseArgs } from 'node:util';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { CARD_IDS, createCatalog } from './cards.ts';
+import { CARD_IDS, DECKS, createCatalog } from './cards.ts';
 import { DEFAULT_RULES, validateRules } from './engine.ts';
 import { runExperiment } from './experiments.ts';
 import { ENGINE_VERSION, percentage, saveReport } from './report.ts';
@@ -20,6 +20,7 @@ npm run replay -- --from reports/experiment-obelix-42.json --index 0
 --games N            Dokładna liczba gier; w eksperymencie parzysta.
 --seed N             Seed serii (uint32). Replay bez --from: seed pojedynczej gry.
 --bots control,control  Opcjonalnie stałe boty. Domyślnie 4 zestawienia aggressive/control.
+--decks galowie,rzymianie  Talie graczy 0 i 1. W experiment obie muszą być takie same.
 --card ID --field cost|attack|health|abilityEnabled --value N|true|false
 --rules plik.json    Nadpisanie jawnych założeń z DEFAULT_RULES.
 --max-turns N        Limit pojedynczych tur gracza; przerwanie nie jest remisem.
@@ -44,19 +45,23 @@ export async function main(args = process.argv.slice(2)): Promise<void> {
   if (!mode || mode === '--help') { console.log(help); return; }
   if (!['simulate', 'experiment', 'replay'].includes(mode)) throw new Error(`Nieznane polecenie: ${mode}`);
   const { values } = parseArgs({ args: args.slice(1), strict: true, allowPositionals: false, options: {
-    games: { type: 'string' }, seed: { type: 'string' }, bots: { type: 'string' },
+    games: { type: 'string' }, seed: { type: 'string' }, bots: { type: 'string' }, decks: { type: 'string' },
     card: { type: 'string' }, field: { type: 'string' }, value: { type: 'string' },
     rules: { type: 'string' }, 'max-turns': { type: 'string' }, out: { type: 'string' },
     first: { type: 'string' }, from: { type: 'string' }, index: { type: 'string' }, help: { type: 'boolean' },
   } });
   if (values.help) { console.log(help); return; }
-  const allowed = mode === 'simulate' ? ['games', 'seed', 'bots', 'rules', 'max-turns', 'out'] :
-    mode === 'experiment' ? ['games', 'seed', 'bots', 'rules', 'max-turns', 'out', 'card', 'field', 'value'] :
-    values.from ? ['from', 'index', 'out'] : ['seed', 'bots', 'rules', 'max-turns', 'out', 'first'];
+  const allowed = mode === 'simulate' ? ['games', 'seed', 'bots', 'rules', 'max-turns', 'out', 'decks'] :
+    mode === 'experiment' ? ['games', 'seed', 'bots', 'rules', 'max-turns', 'out', 'card', 'field', 'value', 'decks'] :
+    values.from ? ['from', 'index', 'out'] : ['seed', 'bots', 'rules', 'max-turns', 'out', 'first', 'decks'];
   for (const key of Object.keys(values)) if (!allowed.includes(key)) throw new Error(`Opcja --${key} nie działa w tym trybie`);
   const seed = integer(values.seed ?? '42', 'seed', 0, 0xFFFFFFFF);
   const games = integer(values.games ?? '1000', 'games', 1);
   const bots = parseBots(values.bots);
+  const defaultDecks = mode === 'experiment' && DECKS.rzymianie.includes(values.card as CardId) ? 'rzymianie,rzymianie' : 'galowie,galowie';
+  const deckList = (values.decks ?? defaultDecks).split(',');
+  if (deckList.length !== 2 || deckList.some(id => !Object.hasOwn(DECKS, id))) throw new Error('Podaj dwie talie: galowie lub rzymianie');
+  const decks = deckList as NonNullable<GameOptions['decks']>;
   let ruleOverrides: Partial<Rules> = {};
   if (values.rules) {
     const input: unknown = JSON.parse(await readFile(resolve(values.rules), 'utf8'));
@@ -69,7 +74,7 @@ export async function main(args = process.argv.slice(2)): Promise<void> {
   const out = values.out ?? 'reports';
   const onProgress = (done: number) => { if (done % 1000 === 0) console.error(`Ukończono ${done}/${games} gier`); };
   if (mode === 'replay') {
-    let options: GameOptions = { seed, bots, rules, firstPlayer: integer(values.first ?? '0', 'first', 0, 1) as 0 | 1, trace: true };
+    let options: GameOptions = { seed, bots, rules, decks, firstPlayer: integer(values.first ?? '0', 'first', 0, 1) as 0 | 1, trace: true };
     let expected: { outcome: unknown; turns: number; actions: number } | undefined;
     let replayIndex: number | undefined;
     if (values.from) {
@@ -83,7 +88,7 @@ export async function main(args = process.argv.slice(2)): Promise<void> {
       const catalogs: [Catalog, Catalog] = [catalogInfo.baseline, catalogInfo.baseline];
       if (game.variantSeat !== undefined) catalogs[game.variantSeat as 0 | 1] = catalogInfo.variant;
       options = { seed: game.seed, firstPlayer: game.firstPlayer, bots: game.bots, botSeeds: game.botSeeds,
-        deckSeeds: game.deckSeeds, rules: report.metadata.rules, catalogs, trace: true };
+        deckSeeds: game.deckSeeds, decks: game.decks, rules: report.metadata.rules, catalogs, trace: true };
       expected = { outcome: game.outcome, turns: game.turns, actions: game.actions };
     }
     const result = runGame({ ...options, verify: true });
@@ -96,9 +101,9 @@ export async function main(args = process.argv.slice(2)): Promise<void> {
     console.log(`Wynik: ${JSON.stringify(result.outcome)}; ${result.turns} tur; ${result.actions} akcji.\nReplay: ${path}`);
     return;
   }
-  const metadata = { mode: mode as 'simulate' | 'experiment', games, seed, bots, rules };
+  const metadata = { mode: mode as 'simulate' | 'experiment', games, seed, bots, rules, decks };
   if (mode === 'simulate') {
-    const result = runSimulation({ games, seed, bots, rules, onProgress });
+    const result = runSimulation({ games, seed, bots, rules, decks, onProgress });
     const files = await saveReport(out, metadata, result.results, result.summary);
     console.log(`Gry: ${games}; zakończone: ${result.summary.completed}; przerwane: ${result.summary.truncated}.\nWynik rozpoczynającego: ${percentage(result.summary.firstPlayerScore)}.\nRaport: ${files.markdown}\nDane: ${files.json}\nKarty: ${files.csv}`);
   } else {
@@ -112,7 +117,8 @@ export async function main(args = process.argv.slice(2)): Promise<void> {
     const patch: CardPatch = { [field]: field === 'abilityEnabled' ? raw === 'true' : integer(raw, field) };
     const baseline = createCatalog()[card];
     if ((field === 'attack' || field === 'health') && !['unit', 'building'].includes(baseline.kind)) throw new Error('Atak/życie dotyczy jednostek i budowli');
-    const result = runExperiment({ games, seed, card, patch, bots, rules, onProgress });
+    if (decks[0] !== decks[1]) throw new Error('Eksperyment zmienia jeden parametr: wybierz dwie takie same talie; różne talie porównuj w simulate');
+    const result = runExperiment({ games, seed, card, patch, bots, rules, deck: decks[0], onProgress });
     const files = await saveReport(out, { ...metadata, card, patch }, result.results, result.summary, result);
     console.log(`Wariant ${card} ${JSON.stringify(patch)}: ${percentage(result.comparison.variantScore)}.\nPrzedział 95%: ${result.comparison.ci95?.map(percentage).join(' – ') ?? 'brak danych'}.\nKompletne pary: ${result.comparison.completePairs}/${result.comparison.pairs}.\nRaport: ${files.markdown}\nDane: ${files.json}\nKarty: ${files.csv}`);
   }

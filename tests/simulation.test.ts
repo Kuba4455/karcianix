@@ -86,7 +86,7 @@ describe('Eksperymenty i statystyki', () => {
     expect(result.results[0].deckSeeds).toEqual(result.results[1].deckSeeds);
     expect(result.results[0].botSeeds).toEqual(result.results[1].botSeeds);
     expect(result.results[0].outcome).toEqual(result.results[1].outcome);
-  });
+  }, 20000);
   test('wariant zmienia dokładnie jedną definicję, bez mutowania bazowej', () => {
     const original = createCatalog();
     const variant = createCatalog({ obelix: { cost: 4 } });

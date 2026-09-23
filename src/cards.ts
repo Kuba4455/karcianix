@@ -1,11 +1,11 @@
-import type { CardDefinition, CardId, CardPatch, Catalog } from './types.ts';
+import type { CardDefinition, CardId, CardPatch, Catalog, DeckId } from './types.ts';
 
 function card(id: CardId, name: string, kind: CardDefinition['kind'], attack: number,
   health: number, cost: number, text = '', gender: CardDefinition['gender'] = 'none'): CardDefinition {
   return { id, name, kind, attack, health, cost, text, gender, abilityEnabled: true };
 }
 
-export const CARDS: readonly CardDefinition[] = [
+export const GAUL_CARDS: readonly CardDefinition[] = [
   card('asterix', 'Asterix', 'unit', 3, 3, 4, 'Dwa uderzenia w tę samą kartę; ignoruje pierwsze obrażenia zwrotne.', 'male'),
   card('obelix', 'Obelix', 'unit', 5, 5, 5, '', 'male'),
   card('panoramix', 'Panoramix', 'unit', 1, 3, 3, 'Przy wejściu: +0/+2 swojej jednostce, która już leży na stole. Ten Panoramix jest chroniony, dopóki żyje wzmocniona jednostka i działa premia.', 'male'),
@@ -27,7 +27,33 @@ export const CARDS: readonly CardDefinition[] = [
   card('spadajace_niebo', 'Spadające niebo', 'spell', 0, 0, 3, 'Blokada jak u Kakofonixa; usuwa dodatnie wzmocnienia obu pól i wyłącza obecne aury kociołków.'),
   card('gesi', 'Gęsi', 'unit', 1, 2, 1),
 ];
+export const ROMAN_CARDS: readonly CardDefinition[] = [
+  card('cezar', 'Juliusz Cezar', 'unit', 5, 2, 4, 'Chroniony przed atakami, dopóki kontrolujesz inną jednostkę.', 'male'),
+  card('brutus', 'Brutus', 'unit', 3, 2, 3, 'Poświęć inną własną jednostkę: trwałe +1/+1, bez kosztu energii.', 'male'),
+  card('legionista', 'Legionista', 'unit', 1, 1, 1, '', 'male'),
+  card('wieniec', 'Wieniec laurowy', 'equipment', 0, 0, 1, 'Stałe +2 ataku swojej jednostce.'),
+  card('katapulta', 'Rzymska katapulta', 'unit', 6, 2, 4),
+  card('antywirus', 'Antywirus', 'unit', 2, 2, 3, 'Przy wejściu wystawia dowolną liczbę Legionistów z ręki za darmo.', 'male'),
+  card('zolw', 'Formacja żółwia', 'unit', 0, 4, 2),
+  card('zapchlenius', 'Zapchlenius', 'unit', 3, 1, 2, '', 'male'),
+  card('popus', 'Gajusz Popus', 'unit', 1, 3, 2, '', 'male'),
+  card('a38', 'Zaświadczenie A38', 'spell', 0, 0, 3, 'Przejmij jednostkę do końca tury. Może od razu atakować; nie można jej poświęcić.'),
+  card('pieknus', 'Gajusz Pięknus', 'unit', 2, 3, 3, '', 'male'),
+  card('tester_luster', 'Tester Luster', 'unit', 0, 2, 1, '', 'male'),
+  card('kalimatis', 'Kalimatis', 'unit', 3, 2, 3, 'Przy wejściu podejrzyj dwie losowe karty ręki rywala albo ukradnij jedną losową.', 'male'),
+  card('ceplus', 'Gajusz Ceplus', 'unit', 4, 2, 2, 'Może atakować od następnej własnej tury.', 'male'),
+  card('tarcza_rzymska', 'Tarcza rzymska', 'equipment', 0, 0, 2, 'Stałe +2 życia swojej jednostce.'),
+  card('kodeks', 'Kodeks prawa rzymskiego', 'spell', 0, 0, 2, 'Odrzuć inną kartę z ręki, aby dobrać dwie.'),
+  card('hasta', 'Hasta', 'equipment', 0, 0, 1, 'Stałe +1 ataku swojej jednostce.'),
+  card('lew', 'Lew', 'unit', 2, 2, 1, 'Może atakować od następnej własnej tury.'),
+  card('koloseum', 'Koloseum', 'unit', 0, 5, 4, 'Za 2 energii schowaj inną jednostkę; nie atakuje i jest chroniona przed atakami. Wyjście darmowe.'),
+  card('oszczep', 'Rzut oszczepem', 'spell', 0, 0, 1, '2 obrażenia wrogiej karcie. Ocalałej usuwa te obrażenia na początku tury jej kontrolera.'),
+];
+export const CARDS = [...GAUL_CARDS, ...ROMAN_CARDS];
 export const CARD_IDS = CARDS.map(c => c.id);
+export const DECKS: Record<DeckId, readonly CardId[]> = {
+  galowie: GAUL_CARDS.map(c => c.id), rzymianie: ROMAN_CARDS.map(c => c.id),
+};
 export function createCatalog(overrides: Partial<Record<CardId, CardPatch>> = {}): Catalog {
   for (const [id, patch] of Object.entries(overrides)) {
     if (!CARD_IDS.includes(id as CardId)) throw new Error(`Nieznana karta: ${id}`);
