@@ -1,4 +1,8 @@
-# Status wersji 0.11.0
+# Status wersji 0.11.1
+
+Wybrane do wymiany karty wracają do talii przed ponownym tasowaniem i doborem, zamiast trafiać na stos odrzuconych. Poprawiono też obsługę odświeżania widoku podczas wybierania kart. Weryfikacja: **111 testów zaliczonych**, kontrola typów TypeScript bez błędów. Nie wykonano nowego pomiaru balansu po tej korekcie.
+
+## Historyczny status wersji 0.11.0
 
 Dodano wymianę kart przed pierwszą turą i 1 energię startową dla obu graczy. Weryfikacja: **109 testów zaliczonych**, kontrola typów TypeScript bez błędów. Dotychczasowe wyniki balansu są historyczne; nie przeprowadzono nowej serii po tych zmianach.
 

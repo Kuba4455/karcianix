@@ -2,6 +2,7 @@ const app = document.querySelector('#app');
 const errorBox = document.querySelector('#error');
 let view;
 let busy = false;
+let polling = false;
 let token = localStorage.getItem('karcianix:seat');
 const deckNames = { galowie: 'Galowie', rzymianie: 'Rzymianie' };
 
@@ -16,11 +17,11 @@ function button(label, handler, primary = false) {
   node.type = 'button'; node.addEventListener('click', handler); return node;
 }
 function showError(message) { errorBox.textContent = message; errorBox.hidden = !message; }
-async function request(path, data, quiet = false) {
+async function request(path, data) {
   if (busy) return;
   busy = true; app.setAttribute('aria-busy', 'true');
   app.querySelectorAll('button, select, input').forEach(node => { node.disabled = true; });
-  if (!quiet) showError('');
+  showError('');
   try {
     const headers = { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(data === undefined ? {} : { 'Content-Type': 'application/json' }) };
     const response = await fetch(path, data === undefined ? { headers } : { method: 'POST', headers, body: JSON.stringify(data) });
@@ -34,7 +35,7 @@ async function request(path, data, quiet = false) {
     const nextView = result.view ?? result;
     const changed = !view || nextView.phase !== view.phase || nextView.revision !== view.revision;
     view = nextView;
-    if (!quiet || changed) render();
+    if (changed || data !== undefined || path === '/api/view') render();
   } catch (error) {
     if (path === '/api/action' && token) {
       // A lost response may still have committed the move: refresh instead of retrying it.
@@ -43,11 +44,32 @@ async function request(path, data, quiet = false) {
         if (response.ok) { view = await response.json(); render(); }
       } catch { /* Keep the last view. */ }
     }
-    if (!quiet) showError(error.message);
+    showError(error.message);
   } finally {
     busy = false; app.setAttribute('aria-busy', 'false');
     app.querySelectorAll('button, select, input').forEach(node => { node.disabled = false; });
   }
+}
+async function refresh() {
+  if (!token || busy || polling) return;
+  polling = true;
+  const seat = token;
+  try {
+    const response = await fetch('/api/view', { headers: { Authorization: `Bearer ${seat}` } });
+    if (seat !== token || busy) return;
+    if (response.status === 401) {
+      token = null; localStorage.removeItem('karcianix:seat'); view = null; render();
+      showError('Sesja gry wygasła. Utwórz nowy pokój.');
+      return;
+    }
+    if (!response.ok) return;
+    const nextView = await response.json();
+    if (seat !== token || busy || (view?.revision ?? -1) > (nextView.revision ?? -1)) return;
+    const changed = !view || nextView.phase !== view.phase || nextView.revision !== view.revision;
+    view = nextView;
+    if (changed) render();
+  } catch { /* A temporary connection failure does not interrupt card selection. */ }
+  finally { polling = false; }
 }
 const act = id => request('/api/action', { id, revision: view.revision });
 
@@ -77,7 +99,7 @@ function rules(parent) {
   const details = el('details'); details.append(el('summary', 'Jak grać?'));
   const list = el('ul');
   for (const line of [
-    'Start: 15 HP, 1 energia i 6 kart. Każdy może odrzucić dowolną liczbę kart, dobrać do 6 i ponownie tasuje pozostałą talię. Drugi gracz dobiera dodatkowo 1 kartę w swojej pierwszej turze.',
+    'Start: 15 HP, 1 energia i 6 kart. Każdy może wymienić dowolną liczbę kart: wybrane wracają do talii, są tasowane z nią, a gracz dobiera z powrotem do 6. Drugi gracz dobiera dodatkowo 1 kartę w swojej pierwszej turze.',
     'Raz na turę możesz zamienić kartę z ręki na energię. Zwiększa to maksimum i dostępną energię o 1, do limitu 10. Energia odnawia się co turę.',
     'Na karcie w ręce wybierz „Zagraj…” i cel albo zamianę na energię. Zapłacisz podany koszt. Widać tylko legalne ruchy.',
     'Na własnej jednostce wybierz cel ataku lub zdolność. Przeciwnika można zaatakować dopiero po opróżnieniu jego pola.',
@@ -99,7 +121,7 @@ function mulliganPanel() {
   const o = view.observation;
   const panel = el('section');
   panel.append(el('h2', `Pokój ${view.roomCode} · Wymiana kart gracza ${o.player + 1}`),
-    el('p', 'Zaznacz karty do odrzucenia albo pozostaw wszystkie. Dobierzesz do sześciu kart, a pozostała talia zostanie ponownie potasowana.'));
+    el('p', 'Zaznacz karty do wymiany albo pozostaw wszystkie. Zaznaczone karty wrócą do talii; po jej potasowaniu dobierzesz do sześciu kart. Możesz ponownie trafić na tę samą kartę.'));
   const cards = el('div', undefined, 'cards');
   const selected = new Set();
   const confirm = button('Zatwierdź wymianę (0)', () => request('/api/action', {
@@ -215,4 +237,4 @@ function render() {
 }
 
 if (token) request('/api/view'); else { view = null; render(); }
-setInterval(() => { if (token && !busy) request('/api/view', undefined, true); }, 2500);
+setInterval(refresh, 2500);

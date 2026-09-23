@@ -127,8 +127,8 @@ test('HTTP: dwa urządzenia, prywatne ręce, tury, osobne pokoje i ochrona przed
     const after = await decision.json();
     expect(after.observation.self.hand).toHaveLength(6);
     if (i === 0) {
-      expect(after.observation.self.discard.map((c: { uid: string }) => c.uid)).toEqual(selected);
-      expect(after.observation.self.hand.some((c: { uid: string }) => selected.includes(c.uid))).toBe(false);
+      expect(after.observation.self.discard).toHaveLength(0);
+      expect(after.observation.self.handCount).toBe(6);
     }
   }
   const hostView = await (await get(created.token)).json();

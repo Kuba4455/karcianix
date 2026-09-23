@@ -73,25 +73,32 @@ describe('Podstawowe zasady', () => {
     expect(getLegalActions(s)).toEqual([{ type: 'mulligan', cardUids: [] }]);
     expect(() => applyAction(s, { type: 'endTurn' })).toThrow('Nielegalny');
     expect(() => applyAction(s, { type: 'mulligan', cardUids: [initial[0], initial[0]] })).toThrow('Nielegalny');
-    const discarded = initial.slice(0, 2);
-    applyAction(s, { type: 'mulligan', cardUids: discarded });
+    const returned = initial.slice(0, 2);
+    applyAction(s, { type: 'mulligan', cardUids: returned });
     expect(s.currentPlayer).toBe(1 - firstPlayer);
     expect(s.players[firstPlayer].hand).toHaveLength(6);
-    expect(s.players[firstPlayer].discard.map(c => c.uid)).toEqual(discarded);
-    expect(s.players[firstPlayer].hand.every(c => !discarded.includes(c.uid))).toBe(true);
-    expect(s.players[firstPlayer].deck).toHaveLength(52);
+    expect(s.players[firstPlayer].discard).toHaveLength(0);
+    expect([...s.players[firstPlayer].hand, ...s.players[firstPlayer].deck].filter(c => returned.includes(c.uid))).toHaveLength(2);
+    expect(s.players[firstPlayer].deck).toHaveLength(54);
     expect(s.players[firstPlayer].deck.map(c => c.uid)).not.toEqual(oldDeck.slice(2));
     expect(s.players[firstPlayer].turnsTaken).toBe(0);
     applyAction(s, { type: 'mulligan', cardUids: s.players[s.currentPlayer].hand.map(c => c.uid) });
     expect(s.currentPlayer).toBe(firstPlayer);
     expect(s.players[1 - firstPlayer].hand).toHaveLength(6);
-    expect(s.players[1 - firstPlayer].discard).toHaveLength(6);
+    expect(s.players[1 - firstPlayer].discard).toHaveLength(0);
     expect(s.players[firstPlayer].turnsTaken).toBe(1);
     expect(s.players[firstPlayer].energy).toBe(1);
     end(s);
     expect(s.players[1 - firstPlayer].hand).toHaveLength(7);
     expect(s.players[1 - firstPlayer].energy).toBe(1);
     expect(createGameBase({ seed: 41, firstPlayer }).players[firstPlayer].hand.map(c => c.uid)).toEqual(initial);
+  });
+  test('karta oddana do talii może zostać ponownie dobrana podczas wymiany', () => {
+    const s = createGameBase({ seed: 6 });
+    const returned = s.players[0].hand.slice(0, 2).map(card => card.uid);
+    applyAction(s, { type: 'mulligan', cardUids: returned });
+    expect(s.players[0].hand.some(card => returned.includes(card.uid))).toBe(true);
+    expect(s.players[0].discard).toHaveLength(0);
   });
   test.each([0, 1] as const)('tylko rozpoczynający nie atakuje w pierwszej własnej turze; zaczyna %s', firstPlayer => {
     const s = createGame({ firstPlayer });

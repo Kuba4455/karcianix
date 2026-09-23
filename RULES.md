@@ -1,11 +1,11 @@
-# Zasady silnika — galowie-rzymianie-v11
+# Zasady silnika — galowie-rzymianie-v11.1
 
 Druga talia i zatwierdzone zdolności: [Rzymianie](ROMANS.md). Każdy gracz niezależnie wybiera Galów lub Rzymian; obie talie mają 60 kart (20 × 3).
 
 ## Ustalenia autora gry
 
 - Obaj gracze zaczynają z 15 HP i sześcioma kartami.
-- Przed pierwszą turą każdy kolejno może odrzucić dowolną liczbę kart startowych (także zero), dobiera do sześciu i ponownie tasuje pozostałą talię. Odrzucone karty trafiają na stos odrzuconych i nie wracają do tasowanej talii.
+- Przed pierwszą turą każdy kolejno może wymienić dowolną liczbę kart startowych (także zero). Wybrane karty wracają do jego talii, talia jest tasowana, po czym dobiera do sześciu. Te same karty mogą zostać ponownie dobrane; nic nie trafia na stos odrzuconych.
 - Obaj gracze mają od początku 1 dostępną energię i maksimum energii równe 1. Wymiana kart nie zużywa energii ani limitu akcji w turze.
 - Każdy ma osobną talię 60 kart: 20 rodzajów × trzy kopie.
 - W pierwszej rundzie rozpoczynający nie dobiera, a drugi gracz dobiera jedną kartę na początku swojej pierwszej tury. Od drugiej własnej tury obaj dobierają po jednej karcie.
@@ -136,3 +136,5 @@ Wersja 0.8.0: Geriatrix ginie na końcu swojej tury bez względu na to, czy wyko
 Wersja 0.10.0: przy `allowFirstTurnAttacks: false` zakaz ataków dotyczy tylko gracza rozpoczynającego w pierwszej turze całej gry; `true` pozwala również jemu atakować. Drugi gracz może atakować jednostkę albo gracza (jeśli pole przeciwnika jest puste) w swojej pierwszej turze.
 
 Wersja 0.11.0: startowa wymiana kart następuje najpierw u rozpoczynającego, potem u drugiego gracza. Drugi gracz dobiera dodatkową kartę dopiero po wymianie, na początku pierwszej własnej tury. `startingEnergy: 1` to startowe dostępne maksimum; tworzenie energii z karty nadal zwiększa maksimum i dostępny zasób o 1.
+
+Wersja 0.11.1: karty wybrane podczas wymiany wracają do talii przed jej tasowaniem i ponownym doborem. Nie zwiększają stosu odrzuconych.
