@@ -2,7 +2,7 @@
 
 Działający projekt TypeScript do testowania zasad, symulowania dowolnej liczby gier
 i porównywania pojedynczych zmian kart. Obaj gracze mają po 60 kart: po trzy kopie
-każdej z 20 kart wybranej talii (Galowie lub Rzymianie). Prosty interfejs tekstowy w przeglądarce, bez zależności produkcyjnych.
+każdej z 20 kart wybranej talii (Galowie lub Rzymianie). Interfejs karcianej areny w przeglądarce, bez zależności produkcyjnych.
 
 ## Zagraj online 1 na 1
 
@@ -35,6 +35,23 @@ własną talię. Gracz rozpoczynający jest losowany. Strona co 2,5 sekundy spra
 czy przeciwnik skończył turę; nie trzeba ręcznie odświeżać. W turze przeciwnika
 widać własną rękę oraz oba pola gry, ale nie można wykonywać ruchów. Każdy widzi
 wyłącznie swoją rękę, a legalne ruchy dostaje w swojej turze.
+
+### Obsługa areny
+
+- Przycisk **Zasady** jest w górnej belce. Górna, lekko czerwona połowa planszy
+  należy do przeciwnika; każda strona pokazuje talię, HP, energię i liczby kart.
+- Koszt karty jest w prawym górnym rogu, a atak i obrona (pozostałe HP) pośrodku.
+- Przycisk **Atakuj** na własnej karcie podświetla wyłącznie legalne cele wskazane
+  przez serwer. Wybierz cel albo **Anuluj atak** (również klawisz Esc).
+  Atak w gracza pojawia się na jego belce, kiedy pozwalają na to zasady.
+- Zdolności kart są oddzielone jako **Akcje dodatkowe**. Gdy efekt ma kilka
+  wariantów lub celów, wybierasz konkretny ruch w oknie dialogowym.
+- Karty w ręce mają **Zagraj** i **Zamień na energię**. Wymiana wymaga
+  potwierdzenia i zgodnie z zasadami zwiększa dostępną oraz maksymalną energię
+  o 1, raz na turę, do maksimum 10.
+- Zmiana stanu gry anuluje nieaktualny wybór celu. Zwykłe odświeżanie bez
+  zmiany stanu zachowuje wybór, również podczas wymiany kart startowych.
+- Na wąskich ekranach rzędy kart można przewijać poziomo.
 
 Po dołączeniu przeglądarka zapamiętuje prywatny identyfikator miejsca gracza,
 więc odświeżenie strony nie przerywa partii. Sam kod pokoju umożliwia tylko
