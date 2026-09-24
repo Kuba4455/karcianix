@@ -2,7 +2,7 @@
 
 Działający projekt TypeScript do testowania zasad, symulowania dowolnej liczby gier
 i porównywania pojedynczych zmian kart. Obaj gracze mają po 60 kart: po trzy kopie
-każdej z 20 kart wybranej talii (Galowie lub Rzymianie). Prosty interfejs tekstowy w przeglądarce, bez zależności produkcyjnych.
+każdej z 20 kart wybranej talii (Galowie lub Rzymianie). Interfejs karcianej areny w przeglądarce, bez zależności produkcyjnych.
 
 ## Zagraj online 1 na 1
 
@@ -36,6 +36,23 @@ czy przeciwnik skończył turę; nie trzeba ręcznie odświeżać. W turze przec
 widać własną rękę oraz oba pola gry, ale nie można wykonywać ruchów. Każdy widzi
 wyłącznie swoją rękę, a legalne ruchy dostaje w swojej turze.
 
+### Obsługa areny
+
+- Przycisk **Zasady** jest w górnej belce. Górna, lekko czerwona połowa planszy
+  należy do przeciwnika; każda strona pokazuje talię, HP, energię i liczby kart.
+- Koszt karty jest w prawym górnym rogu, a atak i obrona (pozostałe HP) pośrodku.
+- Przycisk **Atakuj** na własnej karcie podświetla wyłącznie legalne cele wskazane
+  przez serwer. Wybierz cel albo **Anuluj atak** (również klawisz Esc).
+  Atak w gracza pojawia się na jego belce, kiedy pozwalają na to zasady.
+- Zdolności kart są oddzielone jako **Akcje dodatkowe**. Gdy efekt ma kilka
+  wariantów lub celów, wybierasz konkretny ruch w oknie dialogowym.
+- Karty w ręce mają **Zagraj** i **Zamień na energię**. Wymiana wymaga
+  potwierdzenia i zgodnie z zasadami zwiększa dostępną oraz maksymalną energię
+  o 1, raz na turę, do maksimum 10.
+- Zmiana stanu gry anuluje nieaktualny wybór celu. Zwykłe odświeżanie bez
+  zmiany stanu zachowuje wybór, również podczas wymiany kart startowych.
+- Na wąskich ekranach rzędy kart można przewijać poziomo.
+
 Po dołączeniu przeglądarka zapamiętuje prywatny identyfikator miejsca gracza,
 więc odświeżenie strony nie przerywa partii. Sam kod pokoju umożliwia tylko
 zajęcie wolnego miejsca; po dołączeniu drugiego gracza nie można wejść jako
@@ -49,7 +66,7 @@ graczy w adresie URL ani nie udostępniaj profilu przeglądarki.
 założeń potrzebnych do uruchomienia symulacji. Szczególnie istotna jest robocza
 interpretacja warunkowego życia Falballi/Dobrominy, blokad i Spadającego nieba.
 
-## Aktualne zasady — wersja 0.11.0
+## Aktualne zasady — wersja 0.11.1
 
 Karty i szczegóły nowej talii: [ROMANS.md](ROMANS.md).
 Geriatrix umiera na końcu swojej tury, także gdy nie zaatakuje; po ataku może pozostać na polu do zakończenia tury.
@@ -57,7 +74,7 @@ Rzymianie: Kalimatis kosztuje 4, Gajusz Pięknus ma 2/4, a Kodeks kosztuje 1. Ce
 Przykład: `npm run simulate -- --games 1000 --decks galowie,rzymianie`.
 
 - Dostępne są dwie niezależne talie po 60 kart. Domyślnie obaj gracze używają Galów.
-- Przed grą obaj wybierają karty startowe do odrzucenia (lub zatrzymują wszystkie), dobierają do 6 i tasują pozostałą talię. Drugi gracz dobiera potem dodatkową kartę na początku swojej pierwszej tury.
+- Przed grą obaj wybierają karty startowe do wymiany (lub zatrzymują wszystkie). Wybrane karty wracają do talii; po jej potasowaniu gracz dobiera do 6 i może ponownie trafić na tę samą kartę. Drugi gracz dobiera potem dodatkową kartę na początku swojej pierwszej tury.
 - Każdy zaczyna z 1 dostępną energią (i maksimum 1); zamiana karty na energię podnosi oba zasoby o 1.
 - Rzymianie dodają m.in. poświęcanie jednostek, darmowe przyzwanie Legionistów, przejęcie kontroli, podgląd/kradzież ręki i chowanie w Koloseum.
 - Lew i Gajusz Ceplus czekają z pierwszym atakiem do następnej własnej tury.

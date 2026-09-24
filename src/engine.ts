@@ -442,10 +442,10 @@ export function applyAction(s: GameState, action: Action): GameState {
   switch (action.type) {
     case 'mulligan': {
       const rejected = new Set(action.cardUids);
-      for (const card of self.hand.filter(card => rejected.has(card.uid))) discard(s, owner, card);
+      self.deck.push(...self.hand.filter(card => rejected.has(card.uid)));
       self.hand = self.hand.filter(card => !rejected.has(card.uid));
-      draw(s, owner, s.rules.openingHand - self.hand.length);
       self.deck = new Rng(deriveSeed(s.seed, `mulligan:${owner}`)).shuffle(self.deck);
+      draw(s, owner, s.rules.openingHand - self.hand.length);
       s.pendingMulligan[owner] = false;
       if (!s.outcome) {
         if (s.pendingMulligan[other(owner)]) s.currentPlayer = other(owner);

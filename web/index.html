@@ -3,14 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Karcianix — gra 1 na 1</title>
+  <title>Karcianix — arena online</title>
   <link rel="stylesheet" href="/style.css">
   <script type="module" src="/app.js"></script>
 </head>
 <body>
-  <header><h1>Karcianix</h1><p>Gra online 1 na 1 · dwie talie · dwa urządzenia</p></header>
-  <p id="error" role="alert" hidden></p>
-  <main id="app" aria-busy="true"><p>Ładowanie gry…</p></main>
-  <footer>Partie są tymczasowe. Restart serwera lub cztery godziny bezczynności kończą dostęp do pokoju.</footer>
+  <header class="topbar"><a class="brand" href="/" aria-label="Karcianix — strona gry"><span class="brand-mark" aria-hidden="true">K</span>KARCIANIX</a><div class="topbar-actions"><span id="room-label">Gra online · 1 na 1</span><button id="rules-button" type="button">Zasady ↗</button></div></header>
+  <div class="shell"><p id="error" role="alert" hidden></p><main id="app" aria-busy="true"><p>Ładowanie gry…</p></main><footer>Partie są tymczasowe. Restart serwera lub cztery godziny bezczynności kończą dostęp do pokoju.</footer></div>
+  <dialog id="modal" aria-labelledby="modal-title"><div class="modal-heading"><h2 id="modal-title"></h2><button id="modal-close" type="button" aria-label="Zamknij">✕</button></div><div id="modal-content"></div></dialog>
 </body>
 </html>
