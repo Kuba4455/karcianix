@@ -12,4 +12,4 @@
 "kalimatis","Kalimatis","3","2","4","Przy wejściu podejrzyj dwie losowe karty ręki rywala albo ukradnij jedną losową."
 "ceplus","Gajusz Ceplus","4","2","2","Może atakować od następnej własnej tury."
 "lew","Lew","2","2","1","Może atakować od następnej własnej tury."
-"koloseum","Koloseum","0","5","4","Za 2 energii schowaj własną jednostkę inną niż Koloseum; nie atakuje i jest chroniona przed atakami. Wyjście darmowe."
+"koloseum","Koloseum","0","5","4","Zawsze 0 ataku; nie przyjmuje wzmocnień ataku. Za 2 energii schowaj własną jednostkę inną niż Koloseum; nie atakuje i jest chroniona przed atakami. Wyjście darmowe."

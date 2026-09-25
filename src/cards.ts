@@ -46,7 +46,7 @@ export const ROMAN_CARDS: readonly CardDefinition[] = [
   card('kodeks', 'Kodeks prawa rzymskiego', 'spell', 0, 0, 1, 'Odrzuć inną kartę z ręki, aby dobrać dwie.'),
   card('hasta', 'Hasta', 'equipment', 0, 0, 1, 'Stałe +1 ataku swojej jednostce.'),
   card('lew', 'Lew', 'unit', 2, 2, 1, 'Może atakować od następnej własnej tury.'),
-  card('koloseum', 'Koloseum', 'unit', 0, 5, 4, 'Za 2 energii schowaj własną jednostkę inną niż Koloseum; nie atakuje i jest chroniona przed atakami. Wyjście darmowe.'),
+  card('koloseum', 'Koloseum', 'unit', 0, 5, 4, 'Zawsze 0 ataku; nie przyjmuje wzmocnień ataku. Za 2 energii schowaj własną jednostkę inną niż Koloseum; nie atakuje i jest chroniona przed atakami. Wyjście darmowe.'),
   card('oszczep', 'Rzut oszczepem', 'spell', 0, 0, 1, '2 obrażenia wrogiej karcie. Ocalałej usuwa te obrażenia na początku tury jej kontrolera.'),
 ];
 export const CARDS = [...GAUL_CARDS, ...ROMAN_CARDS];

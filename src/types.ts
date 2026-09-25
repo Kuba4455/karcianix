@@ -53,13 +53,11 @@ export interface PlayerState {
   hp: number;
   maxEnergy: number;
   energy: number;
-  energyCreated: boolean;
   turnsTaken: number;
   deck: CardInstance[];
   hand: CardInstance[];
   board: Permanent[];
   discard: CardInstance[];
-  energyCards: CardInstance[];
 }
 export interface Rules {
   startingHp: number;
@@ -77,7 +75,6 @@ export interface Rules {
 }
 export type Action =
   | { type: 'mulligan'; cardUids: string[] }
-  | { type: 'createEnergy'; cardUid: string }
   | { type: 'playCard'; cardUid: string; targetUid?: string; debuff?: Debuff; choice?: 'peek' | 'steal'; discardUid?: string; summonCount?: number }
   | { type: 'sacrifice'; sourceUid: string; targetUid: string; bonus: Debuff }
   | { type: 'hide'; sourceUid: string; targetUid: string }
@@ -136,14 +133,13 @@ export interface PublicPlayer {
   turnsTaken: number;
   board: Permanent[];
   discard: CardInstance[];
-  energyCards: CardInstance[];
 }
 export interface PlayerObservation {
   player: PlayerId;
   turn: number;
   rules: Rules;
   catalogs: [Catalog, Catalog];
-  self: PublicPlayer & { hand: CardInstance[]; energyCreated: boolean; knownOpponentHand: CardInstance[] };
+  self: PublicPlayer & { hand: CardInstance[]; knownOpponentHand: CardInstance[] };
   opponent: PublicPlayer;
 }
 export type BotKind = 'random' | 'aggressive' | 'control';

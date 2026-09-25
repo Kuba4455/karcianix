@@ -102,7 +102,6 @@ function actionLabel(s: GameState, action: Action): string {
   switch (action.type) {
     case 'mulligan': return `Wymiana kart na start: ${action.cardUids.length}`;
     case 'endTurn': return 'Zakończ turę';
-    case 'createEnergy': return `Zamień ${cardName(action.cardUid)} na energię (+1 maksimum i dostępnej energii)`;
     case 'attack': return `Atak: ${cardName(action.attackerUid)} → ${target(action.targetUid)}`;
     case 'sacrifice': return `${cardName(action.sourceUid)}: poświęć ${cardName(action.targetUid)} (${action.bonus === 'attack' ? '+2 ataku' : action.bonus === 'health' ? '+2 życia' : '+1/+1'})`;
     case 'hide': return `${cardName(action.sourceUid)}: schowaj ${cardName(action.targetUid)} (2 energii)`;
