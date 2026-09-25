@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 import { DECKS, createCatalog } from '../src/cards.ts';
 import {
   applyAction, createGame as createGameBase, getLegalActions, getStats, makePermanent, observe,
-  playerTarget, sweepDeaths,
+  playerTarget, sweepDeaths, assertInvariants,
 } from '../src/engine.ts';
 import type { Action, CardId, GameOptions, GameState, Permanent, PlayerId } from '../src/types.ts';
 
@@ -14,7 +14,7 @@ function createGame(options: GameOptions = {}): GameState {
 }
 
 function scenario(): GameState {
-  const s = createGame({ seed: 13, rules: { startingHp: 12 } });
+  const s = createGame({ seed: 13, rules: { startingHp: 12, maxEnergy: 10 } });
   // General combat scenarios take place after the protected opening round.
   s.turn = 3;
   s.players[0].turnsTaken = 2;
@@ -61,7 +61,7 @@ describe('Podstawowe zasady', () => {
       drawPerTurn: 1,
       secondPlayerFirstDraw: 1,
       allowFirstTurnAttacks: false,
-      maxEnergy: 10,
+      maxEnergy: 7,
       stunRetaliation: true,
     });
   });
@@ -105,8 +105,7 @@ describe('Podstawowe zasady', () => {
     const units: Permanent[] = [];
     for (let turn = 0; turn < 2; turn++) {
       const owner = s.currentPlayer;
-      // Creating energy and playing a card remain legal during the opening.
-      applyAction(s, { type: 'createEnergy', cardUid: s.players[owner].hand[0].uid });
+      // Playing a one-energy card remains legal during the opening.
       const g = play(s, 'gesi')!;
       units.push(g);
       if (turn === 0) {
@@ -173,25 +172,44 @@ describe('Podstawowe zasady', () => {
     hit(s, g, playerTarget(1));
     expect(s.players[1].hp).toBe(11);
   });
-  test('jedna karta energii na turę; nowa energia od razu dostępna, odnowienie na start tury', () => {
+  test.each([0, 1] as const)('energia rośnie po pełnej rundzie i odnawia się na start własnej tury; zaczyna %s', firstPlayer => {
+    const s = createGame({ firstPlayer });
+    const second = firstPlayer === 0 ? 1 : 0;
+    for (let round = 1; round <= 10; round++) {
+      const cap = Math.min(round, 7), nextCap = Math.min(round + 1, 7);
+      expect(s.currentPlayer).toBe(firstPlayer);
+      expect(s.players.map(p => p.maxEnergy)).toEqual([cap, cap]);
+      expect(s.players[firstPlayer].energy).toBe(cap);
+      expect(getLegalActions(s).map(a => a.type)).not.toContain('createEnergy');
+      s.players[firstPlayer].energy = 0;
+      end(s);
+      expect(s.currentPlayer).toBe(second);
+      expect(s.players.map(p => p.maxEnergy)).toEqual([cap, cap]);
+      expect(s.players[firstPlayer].energy).toBe(0);
+      expect(s.players[second].energy).toBe(cap);
+      s.players[second].energy = 0;
+      end(s);
+      expect(s.players.map(p => p.maxEnergy)).toEqual([nextCap, nextCap]);
+      expect(s.players[firstPlayer].energy).toBe(nextCap);
+      expect(s.players[second].energy).toBe(0);
+      assertInvariants(s);
+    }
+  });
+  test('stara akcja wymiany karty na energię jest odrzucana bez zmiany stanu', () => {
     const s = createGame();
-    const card = s.players[0].hand[0];
-    applyAction(s, { type: 'createEnergy', cardUid: card.uid });
-    expect(s.players[0].energy).toBe(2);
-    expect(s.players[0].hand).toHaveLength(5);
-    expect(s.players[0].energyCards).toEqual([card]);
-    expect(getLegalActions(s).some(a => a.type === 'createEnergy')).toBe(false);
-    s.players[0].energy = 0;
+    const before = structuredClone(s);
+    const legacyAction = { type: 'createEnergy', cardUid: s.players[0].hand[0].uid } as unknown as Action;
+    expect(() => applyAction(s, legacyAction)).toThrow('Nielegalny');
+    expect(s).toEqual(before);
+    assertInvariants(s);
+  });
+  test('odnowienie zastępuje pozostałą energię zamiast ją sumować', () => {
+    const s = createGame();
     end(s); end(s);
     expect(s.players[0].energy).toBe(2);
-    expect(getLegalActions(s).some(a => a.type === 'createEnergy')).toBe(true);
-  });
-  test('nie trzeba tworzyć energii, ale nie można przekroczyć 10', () => {
-    const s = scenario();
-    hand(s, 0, 'obelix');
-    expect(getLegalActions(s).some(a => a.type === 'createEnergy')).toBe(false);
-    end(s);
-    expect(s.currentPlayer).toBe(1);
+    end(s); end(s);
+    expect(s.players[0].energy).toBe(3);
+    expect(s.players[1].energy).toBe(2);
   });
   test('nielegalny ruch nie zmienia stanu', () => {
     const s = createGame();
@@ -257,7 +275,7 @@ describe('Podstawowe zasady', () => {
     end(s);
     expect(s.outcome).toEqual({ kind: 'truncated', reason: 'turn-limit' });
     const a = createGame({ rules: { maxActionsPerTurn: 1 } });
-    applyAction(a, { type: 'createEnergy', cardUid: a.players[0].hand[0].uid });
+    play(a, 'gesi');
     expect(a.outcome).toEqual({ kind: 'truncated', reason: 'action-limit' });
   });
 });

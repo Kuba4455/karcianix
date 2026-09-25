@@ -112,8 +112,8 @@ function rules(parent) {
   const list = el('ul');
   for (const line of [
     'Start: 15 HP, 1 energia i 6 kart. Każdy może wymienić dowolną liczbę kart: wybrane wracają do talii, są tasowane z nią, a gracz dobiera z powrotem do 6. Drugi gracz dobiera dodatkowo 1 kartę w swojej pierwszej turze.',
-    'Raz na turę możesz zamienić kartę z ręki na energię. Zwiększa to maksimum i dostępną energię o 1, do limitu 10. Energia odnawia się co turę.',
-    'Na karcie w ręce wybierz „Zagraj” i ewentualny cel albo „Zamień na energię”. Zapłacisz podany koszt. Widać tylko legalne ruchy.',
+    'Obaj gracze zaczynają z energią 1/1. Po każdej pełnej rundzie (turach obu graczy) maksimum energii obu graczy rośnie o 1, do 7. Na początku własnej tury energia odnawia się do maksimum. Kart nie można wymieniać na energię.',
+    'Na karcie w ręce wybierz „Zagraj” i ewentualny cel. Zapłacisz podany koszt. Widać tylko legalne ruchy.',
     'Na własnej jednostce kliknij „Atakuj”, a następnie podświetlony cel. Możesz anulować atak przyciskiem lub Esc. Zdolności są w sekcji „Akcje dodatkowe” na karcie. Przeciwnika można zaatakować dopiero po opróżnieniu jego pola.',
     'Tylko gracz rozpoczynający nie atakuje w swojej pierwszej turze. Drugi gracz może atakować od pierwszej własnej tury. Lew i Ceplus czekają również w turze swojego wystawienia.',
     'Zakończ turę i zaczekaj na ruch drugiej osoby. Każdy widzi tylko własną rękę.',
@@ -160,14 +160,6 @@ function chooseAction(title, entries) {
   choices.append(el('p', 'Wybierz cel lub wariant efektu.'));
   for (const entry of entries) choices.append(button(entry.label, () => act(entry.id, revision)));
   choices.append(button('Anuluj', closeModal)); openModal(title, choices, revision);
-}
-function confirmEnergy(entry, name) {
-  const revision = view.revision;
-  const content = el('div');
-  content.append(el('p', `Zamienić kartę „${name}” na energię? Otrzymasz +1 do maksimum i dostępnej energii. Możesz to zrobić raz na turę.`));
-  const controls = el('div', undefined, 'toolbar');
-  controls.append(button('Zamień na energię', () => act(entry.id, revision), true), button('Anuluj', closeModal));
-  content.append(controls); openModal('Wymiana na energię', content, revision);
 }
 function actionButton(label, handler, enabled, primary = false) {
   const node = button(label, handler, primary); node.disabled = !enabled; return node;
@@ -259,21 +251,19 @@ function board(parent, player, own, o) {
 }
 function handPanel(parent, o) {
   const section = el('section', undefined, 'hand-section');
-  const heading = el('div', undefined, 'section-heading'); heading.append(el('h2', `Twoja ręka / ${o.self.handCount}`), el('span', 'Zagraj kartę lub zamień ją na energię', 'muted')); section.append(heading);
+  const heading = el('div', undefined, 'section-heading'); heading.append(el('h2', `Twoja ręka / ${o.self.handCount}`), el('span', 'Wybierz kartę do zagrania', 'muted')); section.append(heading);
   const cards = el('div', undefined, 'cards hand');
   if (!o.self.hand.length) cards.append(el('p', 'Nie masz kart na ręce.', 'muted'));
   for (const card of o.self.hand) {
     const def = o.catalogs[o.player][card.cardId]; const article = cardShell(card, def);
     const entries = availableActions().filter(e => e.action.cardUid === card.uid);
-    const plays = entries.filter(e => e.action.type === 'playCard'); const energy = entries.find(e => e.action.type === 'createEnergy');
+    const plays = entries.filter(e => e.action.type === 'playCard');
     const controls = el('div', undefined, 'card-actions');
     const play = actionButton(plays.length > 1 ? 'Zagraj · wybierz efekt…' : `Zagraj · ${def.cost} energii`, () => chooseAction(def.name, plays), !attackSelection && !!plays.length, true); play.dataset.play = card.uid;
-    const exchange = actionButton('Zamień na energię · +1', () => confirmEnergy(energy, def.name), !attackSelection && !!energy); exchange.classList.add('convert'); exchange.dataset.energy = card.uid;
-    controls.append(play, exchange);
+    controls.append(play);
     if (view.phase !== 'playing' || view.mulligan) controls.append(el('span', 'Akcje dostępne w Twojej turze.', 'muted'));
     else {
       if (!plays.length) controls.append(el('span', 'Zagranie niedostępne: koszt, cel lub wymaganie karty.', 'muted'));
-      if (!energy) controls.append(el('span', o.self.maxEnergy >= o.rules.maxEnergy ? 'Maksymalna energia osiągnięta.' : 'Wymiana na energię wykorzystana.', 'muted'));
     }
     article.append(controls); cards.append(article);
   }
@@ -336,7 +326,7 @@ function render() {
     const sidebar = el('aside'); const info = el('section', undefined, 'panel'); info.append(el('div', 'Status rozgrywki', 'eyebrow'), el('h2', waiting ? 'Ruch przeciwnika' : 'Twoja tura'));
     info.append(el('p', waiting ? 'Twoje pole i ręka pozostają widoczne. Ruchy udostępnią się automatycznie po zmianie tury.' : 'Wybierz akcję bezpośrednio na karcie. Po kliknięciu „Atakuj” zobaczysz legalne cele.'));
     if (!waiting && o.turn === 1 && !o.rules.allowFirstTurnAttacks) info.append(el('p', 'Gracz rozpoczynający nie atakuje w pierwszej turze.', 'muted'));
-    if (!waiting) info.append(el('p', o.self.maxEnergy >= o.rules.maxEnergy ? 'Osiągnięto maksymalną energię.' : o.self.energyCreated ? 'Wymiana na energię wykorzystana w tej turze.' : 'Możesz zamienić jedną kartę z ręki na +1 energii.', 'muted'));
+    if (!waiting) info.append(el('p', 'Energia odnawia się na początku Twojej tury. Po pełnej rundzie maksimum rośnie o 1, do 7.', 'muted'));
     sidebar.append(info);
     if (view.log?.length) sidebar.append(historyPanel());
     if (o.self.knownOpponentHand.length) {

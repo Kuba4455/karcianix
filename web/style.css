@@ -401,11 +401,6 @@ input,select {
 .card-actions .muted {
   font-size:9px;
 }
-.convert {
-  background:#faf2dd;
-  border-color:#dfcea5;
-  color:#826126;
-}
 .card.selected {
   outline:2px solid #47745a;
   outline-offset:1px;

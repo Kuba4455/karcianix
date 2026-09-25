@@ -46,9 +46,10 @@ wyłącznie swoją rękę, a legalne ruchy dostaje w swojej turze.
   Atak w gracza pojawia się na jego belce, kiedy pozwalają na to zasady.
 - Zdolności kart są oddzielone jako **Akcje dodatkowe**. Gdy efekt ma kilka
   wariantów lub celów, wybierasz konkretny ruch w oknie dialogowym.
-- Karty w ręce mają **Zagraj** i **Zamień na energię**. Wymiana wymaga
-  potwierdzenia i zgodnie z zasadami zwiększa dostępną oraz maksymalną energię
-  o 1, raz na turę, do maksimum 10.
+- Karty w ręce mają przycisk **Zagraj**. Kart nie można wymieniać na energię.
+- Obaj gracze zaczynają z **1/1 energii**. Po pełnej rundzie (turach obu graczy)
+  maksimum obu graczy rośnie o 1, do **7**. Energia odnawia się do maksimum
+  na początku własnej tury.
 - Zmiana stanu gry anuluje nieaktualny wybór celu. Zwykłe odświeżanie bez
   zmiany stanu zachowuje wybór, również podczas wymiany kart startowych.
 - Na wąskich ekranach rzędy kart można przewijać poziomo.
@@ -66,7 +67,7 @@ graczy w adresie URL ani nie udostępniaj profilu przeglądarki.
 założeń potrzebnych do uruchomienia symulacji. Szczególnie istotna jest robocza
 interpretacja warunkowego życia Falballi/Dobrominy, blokad i Spadającego nieba.
 
-## Aktualne zasady — wersja 0.11.1
+## Aktualne zasady — wersja 0.12.0
 
 Karty i szczegóły nowej talii: [ROMANS.md](ROMANS.md).
 Geriatrix umiera na końcu swojej tury, także gdy nie zaatakuje; po ataku może pozostać na polu do zakończenia tury.
@@ -75,14 +76,14 @@ Przykład: `npm run simulate -- --games 1000 --decks galowie,rzymianie`.
 
 - Dostępne są dwie niezależne talie po 60 kart. Domyślnie obaj gracze używają Galów.
 - Przed grą obaj wybierają karty startowe do wymiany (lub zatrzymują wszystkie). Wybrane karty wracają do talii; po jej potasowaniu gracz dobiera do 6 i może ponownie trafić na tę samą kartę. Drugi gracz dobiera potem dodatkową kartę na początku swojej pierwszej tury.
-- Każdy zaczyna z 1 dostępną energią (i maksimum 1); zamiana karty na energię podnosi oba zasoby o 1.
+- Każdy zaczyna z 1/1 energii. Po turach obu graczy maksimum obu stron rośnie o 1 (limit 7); na początku własnej tury energia odnawia się do maksimum. Kart nie można wymieniać na energię.
 - Rzymianie dodają m.in. poświęcanie jednostek, darmowe przyzwanie Legionistów, przejęcie kontroli, podgląd/kradzież ręki i chowanie w Koloseum.
 - Lew i Gajusz Ceplus czekają z pierwszym atakiem do następnej własnej tury.
 
 - Obaj gracze zaczynają z **15 HP**, leczenie gracza nie przekracza 15 HP.
 - Spadające niebo kosztuje **3 energii**.
 - Gęsi mają **1/2 za 1**, Miecz kosztuje **2**, Obelix kosztuje **5**, a Kakofonix ma **2/1 za 3**.
-- W pierwszej turze gracz rozpoczynający nie może deklarować ataków. Drugi gracz może atakować już w swojej pierwszej turze. Obaj mogą tworzyć energię i zagrywać karty.
+- W pierwszej turze gracz rozpoczynający nie może deklarować ataków. Drugi gracz może atakować już w swojej pierwszej turze. Obaj mogą zagrywać karty.
 - Zablokowana jednostka nie oddaje obrażeń do chwili odblokowania.
 - Panoramix daje wybranej jednostce już leżącej na stole wyłącznie +0/+2 i pozostaje chroniony przed atakami, dopóki żyją ta jednostka oraz jej premia.
 - Falballa i Dobromina automatycznie dostają premię ataku, gdy atakują mężczyznę, oraz zużywalną pulę dodatkowego HP, gdy są przez niego atakowane. Nie wymagają przełączania postawy.
@@ -250,7 +251,7 @@ również `RULESET_VERSION`. Replay odrzuca raport z inną wersją silnika.
 
 | Pole | Znaczenie |
 |---|---|
-| `drawn`, `played`, `burned` | Liczba kopii dobranych, zagranych, zamienionych w energię |
+| `drawn`, `played`, `burned` | Liczba kopii dobranych, zagranych; `burned` pozostaje równe 0 (pole historyczne) |
 | `playableCopyTurns` | Liczba par kopia–własna tura, w których kopia miała legalne zagranie |
 | `handCopyTurns` | Liczba par kopia–własna tura, w których była na ręce |
 | `unitDamage`, `directDamage` | Rzeczywiste zabrane HP, bez obrażeń ponad pozostałe życie |

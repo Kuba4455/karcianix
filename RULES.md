@@ -1,4 +1,4 @@
-# Zasady silnika — galowie-rzymianie-v11.1
+# Zasady silnika — galowie-rzymianie-v12
 
 Druga talia i zatwierdzone zdolności: [Rzymianie](ROMANS.md). Każdy gracz niezależnie wybiera Galów lub Rzymian; obie talie mają 60 kart (20 × 3).
 
@@ -6,13 +6,14 @@ Druga talia i zatwierdzone zdolności: [Rzymianie](ROMANS.md). Każdy gracz niez
 
 - Obaj gracze zaczynają z 15 HP i sześcioma kartami.
 - Przed pierwszą turą każdy kolejno może wymienić dowolną liczbę kart startowych (także zero). Wybrane karty wracają do jego talii, talia jest tasowana, po czym dobiera do sześciu. Te same karty mogą zostać ponownie dobrane; nic nie trafia na stos odrzuconych.
-- Obaj gracze mają od początku 1 dostępną energię i maksimum energii równe 1. Wymiana kart nie zużywa energii ani limitu akcji w turze.
+- Obaj gracze mają od początku 1 dostępną energię i maksimum energii równe 1. Wymiana kart startowych nie zużywa energii ani limitu akcji w turze.
 - Każdy ma osobną talię 60 kart: 20 rodzajów × trzy kopie.
 - W pierwszej rundzie rozpoczynający nie dobiera, a drugi gracz dobiera jedną kartę na początku swojej pierwszej tury. Od drugiej własnej tury obaj dobierają po jednej karcie.
 - Gęsi mają 1 ataku, 2 życia i kosztują 1 energię.
-- Raz we własnej turze można dobrowolnie przepalić jedną kartę z ręki na energię.
-  Energia odnawia się na początku własnej tury, maksymalnie 10.
-- W pierwszej turze gracz rozpoczynający nie może deklarować ataków: ani na gracza, ani na jego jednostki lub budowle. Drugi gracz może atakować już w swojej pierwszej turze. Obaj mogą tworzyć energię i zagrywać karty.
+- Po każdej pełnej rundzie, czyli po turach obu graczy, maksimum energii obu stron rośnie o 1, do 7.
+  Na początku własnej tury energia odnawia się do aktualnego maksimum (od 1/1 w pierwszej rundzie do 7/7 od siódmej).
+  Sam wzrost maksimum nie odnawia energii gracza oczekującego. Kart nie można wymieniać na energię.
+- W pierwszej turze gracz rozpoczynający nie może deklarować ataków: ani na gracza, ani na jego jednostki lub budowle. Drugi gracz może atakować już w swojej pierwszej turze. Obaj mogą zagrywać karty.
 - Zablokowana jednostka nie oddaje obrażeń do chwili odblokowania.
 - Po pierwszej turze gracza rozpoczynającego nowe jednostki mogą atakować od razu (z wyjątkiem indywidualnych ograniczeń kart).
 - Zanim zaatakuje się gracza, trzeba usunąć karty z jego pola, w tym palisadę.
@@ -32,9 +33,9 @@ ustalenia autora. Ich zmiana może znacząco zmienić wyniki balansu.
 | Kwestia | Przyjęte zachowanie |
 |---|---|
 | Tura i runda | Liczniki używają pojedynczych tur gracza; pierwszy gracz nie dobiera w pierwszej turze, drugi dobiera 1 |
-| Dobieranie | Drugi gracz obowiązkowo dobiera 1 w pierwszej własnej turze; od drugiej własnej tury obaj obowiązkowo po 1; dobrowolne jest tworzenie energii |
-| Start energii | 1 dostępnej i 1 maksimum bez przepalonej karty; nowy zasób zwiększa jednocześnie maksimum i dostępną energię o 1 |
-| Przepalona karta | Osobna strefa energii, nie ręka ani stos kart odrzuconych; bez późniejszego użycia |
+| Dobieranie | Drugi gracz obowiązkowo dobiera 1 w pierwszej własnej turze; od drugiej własnej tury obaj obowiązkowo po 1 |
+| Start energii | 1 dostępnej i 1 maksimum; po pełnej rundzie +1 maksimum dla obu graczy do 7; odnowienie na początku własnej tury |
+| Wymiana na energię | Niedozwolona; karty pozostają w ręce do zagrania lub działania innego efektu |
 | Ataki | Zakaz tylko w pierwszej turze gracza rozpoczynającego; drugi gracz może zaatakować w pierwszej własnej turze; potem jedna deklaracja ataku każdej jednostki na własną turę; Asterix ma w niej do dwóch uderzeń |
 | Cel ataku | Dowolna legalna karta wrogiego pola; dopiero gdy całe pole jest puste, gracz |
 | Budowle | Kociołek i Palisada blokują gracza, ale nie atakują; trucizna i premie „jednostkom” ich nie obejmują |
@@ -138,3 +139,5 @@ Wersja 0.10.0: przy `allowFirstTurnAttacks: false` zakaz ataków dotyczy tylko g
 Wersja 0.11.0: startowa wymiana kart następuje najpierw u rozpoczynającego, potem u drugiego gracza. Drugi gracz dobiera dodatkową kartę dopiero po wymianie, na początku pierwszej własnej tury. `startingEnergy: 1` to startowe dostępne maksimum; tworzenie energii z karty nadal zwiększa maksimum i dostępny zasób o 1.
 
 Wersja 0.11.1: karty wybrane podczas wymiany wracają do talii przed jej tasowaniem i ponownym doborem. Nie zwiększają stosu odrzuconych.
+
+Wersja 0.12.0: domyślne `startingEnergy: 1`, `maxEnergy: 7`. Maksimum rośnie automatycznie po pełnej rundzie. Usunięto akcję `createEnergy` i strefę kart energii. Wcześniejsze opisy przepalania kart w historii wersji nie obowiązują w aktualnych zasadach.

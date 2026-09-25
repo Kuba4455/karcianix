@@ -5,7 +5,7 @@ import { OnlineRooms } from '../src/online-rooms.ts';
 import { flush, webHarness } from './web-harness.ts';
 
 function fixture() {
-  const game = createGame({ decks: ['rzymianie', 'rzymianie'], firstPlayer: 0 });
+  const game = createGame({ decks: ['rzymianie', 'rzymianie'], firstPlayer: 0, rules: { maxEnergy: 10 } });
   applyAction(game, { type: 'mulligan', cardUids: [] }); applyAction(game, { type: 'mulligan', cardUids: [] });
   game.turn = 3; game.players[0].turnsTaken = 2; game.players[0].energy = game.players[0].maxEnergy = 8;
   const put = (owner: PlayerId, cardId: CardId, zone: 'hand' | 'board') => {
@@ -63,14 +63,13 @@ test('atak na gracza jest dostępny po opróżnieniu pola; zmiana rewizji anuluj
   ui.click(`[data-attack="${ally}"]`); ui.click('[data-target="player:1"]'); await flush(); expect(game.players[1].hp).toBeLessThan(15);
 });
 
-test('wymiana drogiej karty zwiększa obie energie raz na turę i respektuje potwierdzenie', async () => {
+test('ręka nie oferuje wymiany na energię, a droga karta pozostaje niedostępna', async () => {
   const { ui, game, waitingCard, posted } = setup(); await flush();
   expect(ui.query<HTMLButtonElement>(`[data-play="${waitingCard}"]`).disabled).toBe(true);
-  ui.click(`[data-energy="${waitingCard}"]`); ui.click('#modal-close'); expect(posted).toHaveLength(0);
-  ui.click(`[data-energy="${waitingCard}"]`); ui.click('#modal-content .primary'); await flush();
-  expect(game.players[0].energy).toBe(9); expect(game.players[0].maxEnergy).toBe(9);
-  expect(game.players[0].hand.some(c => c.uid === waitingCard)).toBe(false);
-  expect(ui.buttons('[data-energy]').every(b => b.disabled)).toBe(true);
+  expect(ui.buttons('[data-energy]')).toHaveLength(0);
+  expect(ui.dom.window.document.body.textContent).not.toContain('Zamień na energię');
+  expect(game.players[0].hand.some(c => c.uid === waitingCard)).toBe(true);
+  expect(posted).toHaveLength(0);
 });
 
 test('zagrywanie i zdolności dodatkowe zachowują wybór celu i wariantu', async () => {
@@ -100,16 +99,16 @@ test('oczekujący gracz widzi swoją rękę i pole, ale nie ma aktywnych ruchów
   expect(ui.query('.turn-bar').textContent).toContain('Ruch przeciwnika');
 });
 
-test('utrata odpowiedzi nie powtarza wymiany, a odświeżenie zachowuje blokady', async () => {
-  const { game, waitingCard } = fixture(); let revision = 1, posts = 0;
+test('utrata odpowiedzi nie powtarza ataku, a odświeżenie zachowuje blokady', async () => {
+  const { game, ally, enemy } = fixture(); let revision = 1, posts = 0;
   const ui = webHarness(async (path, options) => {
     if (path === '/api/action') { posts++; const payload = JSON.parse(options!.body!); applyAction(game, getLegalActions(game)[payload.id]); revision++; throw new Error('Utracono połączenie'); }
     return { ok: true, status: 200, json: async () => snapshot(game, revision) };
-  }); await flush(); ui.click(`[data-energy="${waitingCard}"]`); ui.click('#modal-content .primary'); await flush();
-  expect(posts).toBe(1); expect(game.players[0].maxEnergy).toBe(9); expect(ui.buttons('[data-energy]').every(b => b.disabled)).toBe(true);
+  }); await flush(); ui.click(`[data-attack="${ally}"]`); ui.click(`[data-target="${enemy}"]`); await flush();
+  expect(posts).toBe(1); expect(ui.query<HTMLButtonElement>(`[data-attack="${ally}"]`).disabled).toBe(true);
 });
 
-test('dwa klienty prawdziwego pokoju: mulligan, wymiana energii, zakończenie i przejęcie tury', async () => {
+test('dwa klienty prawdziwego pokoju: mulligan, wzrost energii po rundzie i przejęcie tury', async () => {
   const rooms = new OnlineRooms(); const host = rooms.create('galowie'); const guest = rooms.join(host.view.roomCode, 'rzymianie');
   const tokens = [host.token, guest.token];
   const clients = tokens.map(token => webHarness(async (path, options) => {
@@ -125,11 +124,18 @@ test('dwa klienty prawdziwego pokoju: mulligan, wymiana energii, zakończenie i 
   }
   const seat = tokens.findIndex(token => rooms.view(token).phase === 'playing'); const active = clients[seat], other = clients[1 - seat];
   const before = rooms.view(tokens[seat]); if (!('observation' in before)) throw new Error('No game');
-  active.buttons('[data-energy]').find(b => !b.disabled)!.click(); active.click('#modal-content .primary'); await flush();
+  expect(active.buttons('[data-energy]')).toHaveLength(0);
   active.click('.turn-bar button'); await flush(); await other.poll();
   expect(rooms.view(tokens[seat]).phase).toBe('waiting-for-turn');
   expect(active.buttons('.card-actions button').every(b => b.disabled)).toBe(true);
   expect(other.query('.turn-bar').textContent).toContain('Twój ruch');
   const view = rooms.view(tokens[1 - seat]); if (!('observation' in view)) throw new Error('No game');
   expect(view.observation.opponent).not.toHaveProperty('hand');
+  expect(view.observation.self.energy).toBe(1);
+  other.click('.turn-bar button'); await flush(); await active.poll();
+  const nextRound = rooms.view(tokens[seat]); if (!('observation' in nextRound)) throw new Error('No game');
+  expect(nextRound.observation.self.energy).toBe(2);
+  expect(nextRound.observation.self.maxEnergy).toBe(2);
+  expect(nextRound.observation.opponent.maxEnergy).toBe(2);
+  expect(active.query('.own .player-bar').textContent).toContain('2 / 2');
 });

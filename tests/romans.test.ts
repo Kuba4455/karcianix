@@ -15,7 +15,7 @@ function createGame(options: GameOptions = {}): GameState {
 }
 
 function scenario(gauls = false) {
-  const s = createGame({ seed: 13, decks: ['rzymianie', gauls ? 'galowie' : 'rzymianie'] });
+  const s = createGame({ seed: 13, rules: { maxEnergy: 10 }, decks: ['rzymianie', gauls ? 'galowie' : 'rzymianie'] });
   s.turn = 3;
   s.players[0].turnsTaken = 2;
   s.players[1].turnsTaken = 1;
@@ -178,7 +178,7 @@ describe('Rzymianie', () => {
     expect(observe(s).opponent).not.toHaveProperty('hand');
     end(s);
     s.players[1].maxEnergy = s.players[1].energy = 9;
-    applyAction(s, { type: 'createEnergy', cardUid: known[0].uid });
+    applyAction(s, { type: 'playCard', cardUid: known[0].uid });
     expect(observe(s, 0).self.knownOpponentHand.some(c => c.uid === known[0].uid)).toBe(false);
   });
   test('Kalimatis kradnie deterministycznie, a obca karta działa i wraca do właściciela po śmierci', () => {
