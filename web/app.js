@@ -5,6 +5,8 @@ let busy = false;
 let polling = false;
 let attackSelection = null;
 let modalRevision = null;
+let mulliganSelection = new Set();
+let mulliganSelectionKey = null;
 const modal = document.querySelector('#modal');
 let token = localStorage.getItem('karcianix:seat');
 const deckNames = { galowie: 'Galowie', rzymianie: 'Rzymianie' };
@@ -273,23 +275,29 @@ function mulliganPanel() {
   const o = view.observation;
   const panel = el('section', undefined, 'panel');
   panel.append(el('div', `Pokój ${view.roomCode} / Przygotowanie`, 'eyebrow'), el('h2', `Wymiana kart gracza ${o.player + 1}`),
-    el('p', 'Zaznacz karty do wymiany albo pozostaw wszystkie. Wybrane wrócą do talii; po jej potasowaniu dobierzesz do sześciu kart. Możesz ponownie trafić na tę samą kartę.'));
-  const cards = el('div', undefined, 'cards'); const selected = new Set();
-  const confirm = button('Zatwierdź wymianę (0)', () => request('/api/action', {
+    el('p', 'Obaj gracze wybierają równocześnie. Zaznacz karty do wymiany albo pozostaw wszystkie. Wybrane wrócą do talii; po jej potasowaniu dobierzesz do sześciu kart. Możesz ponownie trafić na tę samą kartę.'));
+  const key = `${view.roomCode}:${o.player}:${o.self.hand.map(c => c.uid).join(',')}`;
+  if (mulliganSelectionKey !== key) { mulliganSelection = new Set(); mulliganSelectionKey = key; }
+  const cards = el('div', undefined, 'cards'); const selected = mulliganSelection;
+  const confirm = button(`Zatwierdź wymianę (${selected.size})`, () => request('/api/action', {
     id: view.actions.find(e => e.action.type === 'mulligan').id, revision: view.revision, cardUids: [...selected],
   }), true);
   for (const card of o.self.hand) {
     const def = o.catalogs[o.player][card.cardId]; const article = cardShell(card, def);
     const label = el('label', undefined, 'mulligan-choice'); const checkbox = el('input'); checkbox.type = 'checkbox';
+    checkbox.checked = selected.has(card.uid); article.classList.toggle('selected', checkbox.checked);
     checkbox.addEventListener('change', () => {
       if (checkbox.checked) selected.add(card.uid); else selected.delete(card.uid);
       article.classList.toggle('selected', checkbox.checked); confirm.textContent = `Zatwierdź wymianę (${selected.size})`;
     });
     label.append(checkbox, document.createTextNode(' Wymień kartę')); article.append(label); cards.append(article);
   }
-  panel.append(cards, confirm); app.append(panel);
+  panel.append(cards, confirm);
+  const layout = el('div', undefined, 'game-layout'); const sidebar = el('aside'); sidebar.append(historyPanel());
+  layout.append(panel, sidebar); app.append(layout);
 }
 function render() {
+  if (!view?.mulligan || view.phase !== 'playing') { mulliganSelection.clear(); mulliganSelectionKey = null; }
   if (attackSelection && (view?.phase !== 'playing' || view.mulligan || attackSelection.revision !== view.revision)) attackSelection = null;
   if (modalRevision !== null && modalRevision !== view?.revision) closeModal();
   app.replaceChildren();
@@ -328,7 +336,7 @@ function render() {
     if (!waiting && o.turn === 1 && !o.rules.allowFirstTurnAttacks) info.append(el('p', 'Gracz rozpoczynający nie atakuje w pierwszej turze.', 'muted'));
     if (!waiting) info.append(el('p', o.self.maxEnergy >= o.rules.maxEnergy ? 'Osiągnięto maksymalną energię.' : 'Po turach obu graczy maksimum energii wzrośnie o 1, do 7. Energia odnawia się na początku Twojej tury.', 'muted'));
     sidebar.append(info);
-    if (view.log?.length) sidebar.append(historyPanel());
+    sidebar.append(historyPanel());
     if (o.self.knownOpponentHand.length) {
       const known = el('section', undefined, 'panel'); known.append(el('h2', 'Podejrzane karty'));
       for (const card of o.self.knownOpponentHand) known.append(el('p', o.catalogs[1 - o.player][card.cardId].name)); sidebar.append(known);
@@ -339,7 +347,7 @@ function render() {
 }
 function historyPanel() {
   const history = el('section', undefined, 'panel'); history.append(el('div', 'Przebieg pojedynku', 'eyebrow'), el('h2', 'Ostatnie ruchy'));
-  const log = el('ol', undefined, 'game-log'); for (const line of [...view.log].reverse()) log.append(el('li', line)); history.append(log); return history;
+  const log = el('ol', undefined, 'game-log'); for (const line of [...(view.log ?? [])].reverse()) log.append(el('li', line)); history.append(log); return history;
 }
 if (token) request('/api/view'); else { view = null; render(); }
 setInterval(refresh, 2500);

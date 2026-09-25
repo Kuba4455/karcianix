@@ -11,7 +11,7 @@ export const GAUL_CARDS: readonly CardDefinition[] = [
   card('panoramix', 'Panoramix', 'unit', 1, 3, 3, 'Przy wejściu: +0/+2 swojej jednostce, która już leży na stole. Ten Panoramix jest chroniony, dopóki żyje wzmocniona jednostka i działa premia.', 'male'),
   card('falballa', 'Falballa', 'unit', 2, 2, 2, 'Atakując mężczyznę: +2 ataku. Atakowana przez mężczyznę: +2 warunkowego życia.', 'female'),
   card('dobromina', 'Dobromina', 'unit', 1, 3, 2, 'Jak Falballa; przeciw Asparanoixowi premia wynosi 4 zamiast 2.', 'female'),
-  card('asparanoix', 'Asparanoix', 'unit', 2, 4, 3, 'Przy wejściu osłabia kartę rywala o -1/-1, -2/0 lub 0/-2, dopóki żyje.', 'male'),
+  card('asparanoix', 'Asparanoix', 'unit', 1, 4, 3, 'Przy wejściu osłabia kartę rywala o -1/-1, -2/0 lub 0/-2, dopóki żyje.', 'male'),
   card('ahigienix', 'Ahigienix', 'unit', 1, 4, 3, 'Na początku tury rywala: 1 obrażenie każdej jego jednostce.', 'male'),
   card('automatix', 'Automatix', 'unit', 1, 5, 3, '', 'male'),
   card('geriatrix', 'Geriatrix', 'unit', 3, 1, 1, 'Umiera na końcu swojej tury, niezależnie od tego, czy atakował.', 'male'),

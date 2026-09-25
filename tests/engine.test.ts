@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { DECKS, createCatalog } from '../src/cards.ts';
 import {
-  applyAction, createGame as createGameBase, getLegalActions, getStats, makePermanent, observe,
+  applyAction, assertInvariants, createGame as createGameBase, getLegalActions, getStats, makePermanent, observe,
   playerTarget, sweepDeaths,
 } from '../src/engine.ts';
 import type { Action, CardId, GameOptions, GameState, Permanent, PlayerId } from '../src/types.ts';
@@ -464,7 +464,7 @@ describe('Zdolności jednostek', () => {
     husband.modifiers.push({ origin: 'tarcza', attack: 0, health: 2 });
     hit(s, d, husband);
     expect(getStats(s, 1, husband).health).toBe(1);
-    expect(getStats(s, 0, d).health).toBe(1);
+    expect(getStats(s, 0, d).health).toBe(2);
   });
   test('Falballa atakująca mężczyznę nie dostaje premii obronnej na kontrę', () => {
     const s = scenario();
@@ -602,4 +602,34 @@ test('obserwacja nie ujawnia ręki rywala, kolejności talii, seeda ani prywatny
   o.catalogs[0].obelix.attack = 900;
   expect(s.players[0].hand).toHaveLength(6);
   expect(s.catalogs[0].obelix.attack).toBe(5);
+});
+
+
+test.each([0, 1] as const)('wymiana w dowolnej kolejności daje identyczną partię; zaczyna %s', firstPlayer => {
+  const games = [createGameBase({ seed: 72, firstPlayer }), createGameBase({ seed: 72, firstPlayer })];
+  for (const [index, s] of games.entries()) {
+    const order = index === 0 ? [0, 1] as const : [1, 0] as const;
+    const selections = s.players.map(p => p.hand.slice(0, 3).map(c => c.uid));
+    for (const owner of order) {
+      expect(getLegalActions(s, owner)).toEqual([{ type: 'mulligan', cardUids: [] }]);
+      applyAction(s, { type: 'mulligan', cardUids: selections[owner] }, owner);
+      assertInvariants(s);
+      if (s.pendingMulligan.some(Boolean)) {
+        expect(getLegalActions(s, owner)).toEqual([]);
+        expect(s.players.map(p => p.turnsTaken)).toEqual([0, 0]);
+        const before = structuredClone(s);
+        expect(() => applyAction(s, { type: 'endTurn' }, owner)).toThrow();
+        expect(() => applyAction(s, { type: 'mulligan', cardUids: [] }, owner)).toThrow();
+        expect(s).toEqual(before);
+      }
+    }
+    expect(s.currentPlayer).toBe(firstPlayer);
+    expect(s.players[firstPlayer].turnsTaken).toBe(1);
+    expect(s.players.map(p => p.energy)).toEqual([1, 1]);
+  }
+  expect(games[0]).toEqual(games[1]);
+});
+
+test('Asparanoix ma bazowo 1 ataku', () => {
+  expect(createCatalog().asparanoix.attack).toBe(1);
 });

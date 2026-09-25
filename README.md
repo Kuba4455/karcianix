@@ -309,3 +309,7 @@ Nie ma automatycznych etykiet „OP/słaba”: wymagają arbitralnego progu, doc
 roli karty i wystarczająco dobrych graczy. Przy badaniu wielu kart potwierdzaj
 wybrane hipotezy na nowej serii; przedziały 95% nie stanowią jednoczesnej
 gwarancji dla wszystkich przetestowanych wariantów.
+
+### Równoczesne przygotowanie i historia
+
+Obaj gracze online mogą od razu wybrać i zatwierdzić karty do wymiany, w dowolnej kolejności. Zatwierdzenie przez przeciwnika nie resetuje zaznaczeń ani nie unieważnia niezależnej wymiany. Pierwsza tura zaczyna się po obu zatwierdzeniach. Panel ostatnich ruchów jest widoczny także podczas przygotowania i tury przeciwnika. Asparanoix ma 1 ataku.

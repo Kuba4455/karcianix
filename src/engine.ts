@@ -247,10 +247,10 @@ function playActions(s: GameState, card: CardInstance): Action[] {
   }
   return [base];
 }
-export function getLegalActions(s: GameState): Action[] {
+export function getLegalActions(s: GameState, owner: PlayerId = s.currentPlayer): Action[] {
   if (s.outcome) return [];
-  const owner = s.currentPlayer;
   if (s.pendingMulligan[owner]) return [{ type: 'mulligan', cardUids: [] }];
+  if (s.pendingMulligan.some(Boolean) || owner !== s.currentPlayer) return [];
   const self = s.players[owner];
   const enemyOwner = other(owner);
   const enemy = s.players[enemyOwner];
@@ -434,14 +434,13 @@ function sameAction(a: Action, b: Action): boolean {
   return keys.length === Object.keys(b).length && keys.every(k => a[k] === b[k]);
 }
 /** Mutates state in place for batch performance. Illegal moves are rejected before any mutation. */
-export function applyAction(s: GameState, action: Action): GameState {
-  const mulligan = !s.outcome && action.type === 'mulligan' && Object.keys(action).length === 2 && s.pendingMulligan[s.currentPlayer] &&
+export function applyAction(s: GameState, action: Action, owner: PlayerId = s.currentPlayer): GameState {
+  const mulligan = !s.outcome && action.type === 'mulligan' && Object.keys(action).length === 2 && s.pendingMulligan[owner] &&
     Array.isArray(action.cardUids) && action.cardUids.every(uid => typeof uid === 'string') &&
     new Set(action.cardUids).size === action.cardUids.length &&
-    action.cardUids.every(uid => s.players[s.currentPlayer].hand.some(card => card.uid === uid));
-  if (!mulligan && !getLegalActions(s).some(legal => sameAction(legal, action))) throw new Error(`Nielegalny ruch: ${JSON.stringify(action)}`);
+    action.cardUids.every(uid => s.players[owner].hand.some(card => card.uid === uid));
+  if (!mulligan && !getLegalActions(s, owner).some(legal => sameAction(legal, action))) throw new Error(`Nielegalny ruch: ${JSON.stringify(action)}`);
   if (action.type !== 'mulligan') s.actionsThisTurn++;
-  const owner = s.currentPlayer;
   const self = s.players[owner];
   switch (action.type) {
     case 'mulligan': {

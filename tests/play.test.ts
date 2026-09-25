@@ -143,7 +143,7 @@ test('HTTP: dwa urządzenia, prywatne ręce, tury, osobne pokoje i ochrona przed
   expect(waiting.view.observation.opponent).not.toHaveProperty('hand');
   expect(waiting.view.boardStats).toBeDefined();
   expect(waiting.view).not.toHaveProperty('actions');
-  expect(waiting.view).not.toHaveProperty('log');
+  expect(waiting.view.log).toEqual(active.view.log);
   expect(active.view.actions.some((e: { action: { type: string } }) => e.action.type === 'createEnergy')).toBe(false);
   const activeView = active.view;
   const end = activeView.actions.find((e: { action: { type: string } }) => e.action.type === 'endTurn');

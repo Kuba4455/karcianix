@@ -13,6 +13,7 @@ export class PlaySession {
   private game: GameState | null = null;
   private revision = 0;
   private covered = true;
+  private openingRevision = 0;
   private log: string[] = [];
 
   view() {
@@ -29,12 +30,13 @@ export class PlaySession {
   viewFor(player: PlayerId) {
     const s = this.game;
     if (!s || s.outcome || this.covered) throw new PlayError('Nie ma aktywnej tury.', 409);
-    const common = { revision: this.revision, decks: s.decks, mulligan: s.pendingMulligan.some(Boolean), observation: observe(s, player),
+    const common = { revision: this.revision, decks: s.decks, mulligan: s.pendingMulligan.some(Boolean), log: [...this.log], observation: observe(s, player),
       boardStats: Object.fromEntries(([0, 1] as const).flatMap(owner => s.players[owner].board.map(u =>
         [u.uid, { ...getStats(s, owner, u), protected: protectedUnit(s, owner, u) }]))) };
-    if (s.currentPlayer !== player) return { ...common, phase: 'waiting-for-turn' as const, currentPlayer: s.currentPlayer };
-    return { ...common, phase: 'playing' as const, log: [...this.log],
-      actions: getLegalActions(s).map((action, id) => ({ id, action, label: actionLabel(s, action) })) };
+    const actions = getLegalActions(s, player);
+    if (!actions.length) return { ...common, phase: 'waiting-for-turn' as const, currentPlayer: s.currentPlayer };
+    return { ...common, phase: 'playing' as const,
+      actions: actions.map((action, id) => ({ id, action, label: actionLabel(s, action, player) })) };
   }
 
   private checkRevision(revision: unknown) {
@@ -51,6 +53,7 @@ export class PlaySession {
     this.covered = true;
     this.log = [`Rozpoczęto nową partię. Obaj gracze mają ${this.game.rules.startingHp} HP.`];
     this.revision++;
+    this.openingRevision = this.revision;
     return this.view();
   }
 
@@ -62,31 +65,35 @@ export class PlaySession {
     return this.view();
   }
 
-  act(id: unknown, revision: unknown, cardUids?: unknown) {
-    this.checkRevision(revision);
+  act(id: unknown, revision: unknown, cardUids?: unknown, player?: PlayerId) {
+    if (player === undefined) this.checkRevision(revision);
     const s = this.game;
     if (!s || s.outcome || this.covered) throw new PlayError('Najpierw odsłoń swoją turę.');
-    const actions = getLegalActions(s);
+    const owner = player ?? s.currentPlayer;
+    // During online setup only the other hand may have changed since this view.
+    // Each seat can submit once; ordinary turns still require an exact revision.
+    const independentMulligan = player !== undefined && s.pendingMulligan[owner] &&
+      Number.isSafeInteger(revision) && (revision as number) >= this.openingRevision && (revision as number) <= this.revision;
+    if (!independentMulligan) this.checkRevision(revision);
+    const actions = getLegalActions(s, owner);
     if (!Number.isSafeInteger(id) || (id as number) < 0 || (id as number) >= actions.length) throw new PlayError('Nielegalny ruch.');
     const selected = actions[id as number];
     if (selected.type === 'mulligan' && (!Array.isArray(cardUids) || cardUids.some(uid => typeof uid !== 'string') ||
-      new Set(cardUids).size !== cardUids.length || cardUids.some(uid => !s.players[s.currentPlayer].hand.some(card => card.uid === uid)))) {
+      new Set(cardUids).size !== cardUids.length || cardUids.some(uid => !s.players[owner].hand.some(card => card.uid === uid)))) {
       throw new PlayError('Wybierz karty z własnej ręki bez powtórzeń.');
     }
     const action: Action = selected.type === 'mulligan' ? { type: 'mulligan', cardUids: cardUids as string[] } : selected;
-    const owner = s.currentPlayer;
-    const text = `Gracz ${owner + 1}: ${actionLabel(s, action)}`;
-    applyAction(s, action);
+    const text = `Gracz ${owner + 1}: ${actionLabel(s, action, owner)}`;
+    applyAction(s, action, owner);
     this.log.push(text);
     this.log = this.log.slice(-30);
-    if (s.currentPlayer !== owner) this.covered = true;
+    if (player === undefined && s.currentPlayer !== owner) this.covered = true;
     this.revision++;
     return this.view();
   }
 }
 
-function actionLabel(s: GameState, action: Action): string {
-  const owner = s.currentPlayer;
+function actionLabel(s: GameState, action: Action, owner: PlayerId = s.currentPlayer): string {
   const cardName = (uid: string) => {
     for (const seat of [owner, other(owner)]) {
       const p = s.players[seat];
