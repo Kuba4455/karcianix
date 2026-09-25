@@ -90,9 +90,9 @@ export class OnlineRooms {
   act(token: unknown, id: unknown, revision: unknown, cardUids?: unknown) {
     const { room, player } = this.seat(token);
     if (!room.tokens[1]) throw new PlayError('Poczekaj na drugiego gracza.', 409);
-    const current = room.session.view();
-    if (current.phase !== 'playing' || current.observation.player !== player) throw new PlayError('Poczekaj na swoją turę.', 403);
-    const result = room.session.act(id, revision, cardUids);
+    const current = room.session.viewFor(player);
+    if (current.phase !== 'playing') throw new PlayError('Poczekaj na swoją turę.', 403);
+    const result = room.session.act(id, revision, cardUids, player);
     if (result.phase === 'handoff') room.session.reveal(result.revision);
     return this.view(token);
   }

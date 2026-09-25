@@ -11,7 +11,7 @@ export const GAUL_CARDS: readonly CardDefinition[] = [
   card('panoramix', 'Panoramix', 'unit', 1, 3, 3, 'Przy wejściu: +0/+2 swojej jednostce, która już leży na stole. Ten Panoramix jest chroniony, dopóki żyje wzmocniona jednostka i działa premia.', 'male'),
   card('falballa', 'Falballa', 'unit', 2, 2, 2, 'Atakując mężczyznę: +2 ataku. Atakowana przez mężczyznę: +2 warunkowego życia.', 'female'),
   card('dobromina', 'Dobromina', 'unit', 1, 3, 2, 'Jak Falballa; przeciw Asparanoixowi premia wynosi 4 zamiast 2.', 'female'),
-  card('asparanoix', 'Asparanoix', 'unit', 2, 4, 3, 'Przy wejściu osłabia kartę rywala o -1/-1, -2/0 lub 0/-2, dopóki żyje.', 'male'),
+  card('asparanoix', 'Asparanoix', 'unit', 1, 4, 3, 'Przy wejściu osłabia kartę rywala o -1/-1, -2/0 lub 0/-2, dopóki żyje.', 'male'),
   card('ahigienix', 'Ahigienix', 'unit', 1, 4, 3, 'Na początku tury rywala: 1 obrażenie każdej jego jednostce.', 'male'),
   card('automatix', 'Automatix', 'unit', 1, 5, 3, '', 'male'),
   card('geriatrix', 'Geriatrix', 'unit', 3, 1, 1, 'Umiera na końcu swojej tury, niezależnie od tego, czy atakował.', 'male'),
@@ -46,7 +46,7 @@ export const ROMAN_CARDS: readonly CardDefinition[] = [
   card('kodeks', 'Kodeks prawa rzymskiego', 'spell', 0, 0, 1, 'Odrzuć inną kartę z ręki, aby dobrać dwie.'),
   card('hasta', 'Hasta', 'equipment', 0, 0, 1, 'Stałe +1 ataku swojej jednostce.'),
   card('lew', 'Lew', 'unit', 2, 2, 1, 'Może atakować od następnej własnej tury.'),
-  card('koloseum', 'Koloseum', 'unit', 0, 5, 4, 'Za 2 energii schowaj własną jednostkę inną niż Koloseum; nie atakuje i jest chroniona przed atakami. Wyjście darmowe.'),
+  card('koloseum', 'Koloseum', 'unit', 0, 5, 4, 'Zawsze 0 ataku; nie przyjmuje wzmocnień ataku. Za 2 energii schowaj własną jednostkę inną niż Koloseum; nie atakuje i jest chroniona przed atakami. Wyjście darmowe.'),
   card('oszczep', 'Rzut oszczepem', 'spell', 0, 0, 1, '2 obrażenia wrogiej karcie. Ocalałej usuwa te obrażenia na początku tury jej kontrolera.'),
 ];
 export const CARDS = [...GAUL_CARDS, ...ROMAN_CARDS];

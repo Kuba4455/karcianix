@@ -15,7 +15,7 @@ function createGame(options: GameOptions = {}): GameState {
 }
 
 function scenario(gauls = false) {
-  const s = createGame({ seed: 13, decks: ['rzymianie', gauls ? 'galowie' : 'rzymianie'] });
+  const s = createGame({ seed: 13, rules: { maxEnergy: 10 }, decks: ['rzymianie', gauls ? 'galowie' : 'rzymianie'] });
   s.turn = 3;
   s.players[0].turnsTaken = 2;
   s.players[1].turnsTaken = 1;
@@ -177,8 +177,7 @@ describe('Rzymianie', () => {
     expect(observe(s, 1).self.knownOpponentHand).toHaveLength(0);
     expect(observe(s).opponent).not.toHaveProperty('hand');
     end(s);
-    s.players[1].maxEnergy = s.players[1].energy = 9;
-    applyAction(s, { type: 'createEnergy', cardUid: known[0].uid });
+    play(s, 'kodeks', { discardUid: known[0].uid });
     expect(observe(s, 0).self.knownOpponentHand.some(c => c.uid === known[0].uid)).toBe(false);
   });
   test('Kalimatis kradnie deterministycznie, a obca karta działa i wraca do właściciela po śmierci', () => {
@@ -214,6 +213,40 @@ describe('Rzymianie', () => {
     expect(s.players[1].board).not.toContain(enemy);
     end(s);
     expect(getLegalActions(s).some(a => a.type === 'attack' && a.attackerUid === u.uid)).toBe(true);
+  });
+  test.each(['wieniec', 'hasta', 'miecz', 'sierp', 'magiczny_napoj'] as const)('Koloseum odrzuca wzmocnienie ataku %s bez zmiany stanu', id => {
+    const s = scenario(true);
+    const col = unit(s, 0, 'koloseum');
+    const ally = unit(s, 0, 'legionista');
+    const card = take(s, ['wieniec', 'hasta'].includes(id) ? 0 : 1, id);
+    s.players[0].hand.push(card);
+    const action: Action = { type: 'playCard', cardUid: card.uid, targetUid: col.uid };
+    expect(getLegalActions(s)).not.toContainEqual(action);
+    expect(getLegalActions(s)).toContainEqual({ ...action, targetUid: ally.uid });
+    const before = structuredClone(s);
+    expect(() => applyAction(s, action)).toThrow('Nielegalny');
+    expect(s).toEqual(before);
+  });
+  test.each(['tarcza', 'tarcza_rzymska'] as const)('Koloseum nadal przyjmuje wzmocnienie zdrowia %s', id => {
+    const s = scenario(true); const col = unit(s, 0, 'koloseum');
+    const card = take(s, id === 'tarcza' ? 1 : 0, id); s.players[0].hand.push(card);
+    applyAction(s, { type: 'playCard', cardUid: card.uid, targetUid: col.uid });
+    expect(getStats(s, 0, col)).toMatchObject({ attack: 0, health: id === 'tarcza' ? 6 : 7 });
+  });
+  test('Koloseum ma 0 ataku mimo aury i modyfikatorów; nie atakuje ani nie kontratakuje', () => {
+    const s = scenario(true); const col = unit(s, 0, 'koloseum');
+    s.players[0].board.push(makePermanent(take(s, 1, 'kociolek')));
+    col.modifiers.push({ origin: 'miecz', attack: 2, health: 0 });
+    s.catalogs[0].koloseum.abilityEnabled = false;
+    expect(getStats(s, 0, col).attack).toBe(0);
+    expect(getLegalActions(s).some(a => a.type === 'attack' && a.attackerUid === col.uid)).toBe(false);
+    expect(() => applyAction(s, { type: 'attack', attackerUid: col.uid, targetUid: 'player:1' })).toThrow('Nielegalny');
+    const attacker = unit(s, 1, 'automatix');
+    expect(getLegalActions(s).some(a => a.type === 'attack' && a.attackerUid === col.uid)).toBe(false);
+    end(s);
+    applyAction(s, { type: 'attack', attackerUid: attacker.uid, targetUid: col.uid });
+    expect(attacker.damage).toBe(0);
+    expect(col.damage).toBe(1);
   });
   test('Koloseum kosztuje 2 za schowanie, odsłania za darmo i po zniszczeniu', () => {
     const s = scenario(); const col = unit(s, 0, 'koloseum'); const l = unit(s, 0, 'legionista');

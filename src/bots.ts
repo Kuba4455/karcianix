@@ -98,14 +98,6 @@ function score(o: PlayerObservation, action: Action, control: boolean): number {
         !(catalog[target.cardId].abilityEnabled && ['lew', 'ceplus'].includes(target.cardId) && target.enteredTurn === o.turn) ? 2 : -2;
     }
     case 'attack': return attackScore(o, action, control);
-    case 'createEnergy': {
-      const card = o.self.hand.find(c => c.uid === action.cardUid)!;
-      const nextEnergy = o.self.maxEnergy + 1;
-      const canUnlock = o.self.hand.some(c => c.uid !== card.uid && catalog[c.cardId].cost === o.self.energy + 1);
-      if (o.self.hand.length <= 1 && o.self.maxEnergy >= 4 && !canUnlock) return -5;
-      const growth = nextEnergy <= 4 ? 14 : nextEnergy <= 6 ? 8 : o.self.hand.length >= 5 ? 5 : 0;
-      return growth + (canUnlock ? 4 : 0) - handValue(o, catalog[card.cardId], control) * 0.65;
-    }
     case 'playCard': {
       const card = o.self.hand.find(c => c.uid === action.cardUid)!;
       const def = catalog[card.cardId];

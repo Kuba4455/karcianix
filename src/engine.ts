@@ -7,7 +7,7 @@ import type {
 } from './types.ts';
 
 export const DEFAULT_RULES: Readonly<Rules> = {
-  startingHp: 15, startingEnergy: 1, openingHand: 6, drawPerTurn: 1, secondPlayerFirstDraw: 1, allowFirstTurnAttacks: false, maxEnergy: 10,
+  startingHp: 15, startingEnergy: 1, openingHand: 6, drawPerTurn: 1, secondPlayerFirstDraw: 1, allowFirstTurnAttacks: false, maxEnergy: 7,
   maxTurns: 200, maxActionsPerTurn: 200,
   poisonStacks: true, emptyDeck: 'loss', stunRetaliation: true,
 };
@@ -41,8 +41,8 @@ function event(s: GameState, item: Omit<GameEvent, 'turn'>): void {
 }
 function makePlayer(owner: PlayerId, rules: Rules, deckSeed: number, deck: DeckId): PlayerState {
   const cards = DECKS[deck].flatMap(cardId => [0, 1, 2].map(copy => ({ cardId, owner, uid: `p${owner}:${cardId}:${copy}` })));
-  return { hp: rules.startingHp, maxEnergy: rules.startingEnergy, energy: rules.startingEnergy, energyCreated: false, turnsTaken: 0,
-    deck: new Rng(deckSeed).shuffle(cards), hand: [], board: [], discard: [], energyCards: [], knownOpponentHand: [] };
+  return { hp: rules.startingHp, maxEnergy: rules.startingEnergy, energy: rules.startingEnergy, turnsTaken: 0,
+    deck: new Rng(deckSeed).shuffle(cards), hand: [], board: [], discard: [], knownOpponentHand: [] };
 }
 export function createGame(options: GameOptions = {}): GameState {
   const seed = options.seed ?? 1;
@@ -68,7 +68,7 @@ export function createGame(options: GameOptions = {}): GameState {
 export function stats(unit: Permanent, board: readonly Permanent[], catalog: Catalog) {
   const def = catalog[unit.cardId];
   const aura = def.kind === 'unit' ? board.filter(x => x.cardId === 'kociolek' && x.auraActive && catalog[x.cardId].abilityEnabled).length : 0;
-  const attack = Math.max(0, def.attack + aura + unit.modifiers.reduce((n, m) => n + m.attack, 0));
+  const attack = unit.cardId === 'koloseum' ? 0 : Math.max(0, def.attack + aura + unit.modifiers.reduce((n, m) => n + m.attack, 0));
   const maxHealth = def.health + aura + unit.modifiers.reduce((n, m) => n + m.health, 0);
   return { attack, maxHealth, health: maxHealth - unit.damage };
 }
@@ -158,7 +158,6 @@ function startTurn(s: GameState): void {
   const p = s.players[owner];
   p.turnsTaken++;
   p.energy = p.maxEnergy;
-  p.energyCreated = false;
   s.actionsThisTurn = 0;
   for (const side of s.players) for (const u of side.board) {
     u.stuns = u.stuns.filter(e => e.sourceOwner !== owner || e.expiresAtOwnerTurn > p.turnsTaken);
@@ -215,6 +214,10 @@ function endTurn(s: GameState): void {
   }
   s.currentPlayer = other(s.currentPlayer);
   s.turn++;
+  // A round ends only after both players have taken their turn.
+  if (s.currentPlayer === s.firstPlayer) {
+    for (const p of s.players) p.maxEnergy = Math.min(s.rules.maxEnergy, p.maxEnergy + 1);
+  }
   startTurn(s);
 }
 function playActions(s: GameState, card: CardInstance): Action[] {
@@ -226,7 +229,9 @@ function playActions(s: GameState, card: CardInstance): Action[] {
   const base = { type: 'playCard' as const, cardUid: card.uid };
   if (!def.abilityEnabled) return [base];
   const units = self.board.filter(u => s.catalogs[owner][u.cardId].kind === 'unit');
-  if (['miecz', 'tarcza', 'sierp', 'magiczny_napoj', 'wieniec', 'hasta', 'tarcza_rzymska'].includes(card.cardId)) return units.map(u => ({ ...base, targetUid: u.uid }));
+  if (['miecz', 'tarcza', 'sierp', 'magiczny_napoj', 'wieniec', 'hasta', 'tarcza_rzymska'].includes(card.cardId)) return units
+    .filter(u => u.cardId !== 'koloseum' || ['tarcza', 'tarcza_rzymska'].includes(card.cardId))
+    .map(u => ({ ...base, targetUid: u.uid }));
   if (card.cardId === 'a38') return enemy.board.filter(u => s.catalogs[other(owner)][u.cardId].kind === 'unit').map(u => ({ ...base, targetUid: u.uid }));
   if (card.cardId === 'oszczep') return enemy.board.map(u => ({ ...base, targetUid: u.uid }));
   if (card.cardId === 'kodeks') return self.hand.filter(c => c.uid !== card.uid).map(c => ({ ...base, discardUid: c.uid }));
@@ -242,16 +247,15 @@ function playActions(s: GameState, card: CardInstance): Action[] {
   }
   return [base];
 }
-export function getLegalActions(s: GameState): Action[] {
+export function getLegalActions(s: GameState, owner: PlayerId = s.currentPlayer): Action[] {
   if (s.outcome) return [];
-  const owner = s.currentPlayer;
   if (s.pendingMulligan[owner]) return [{ type: 'mulligan', cardUids: [] }];
+  if (s.pendingMulligan.some(Boolean) || owner !== s.currentPlayer) return [];
   const self = s.players[owner];
   const enemyOwner = other(owner);
   const enemy = s.players[enemyOwner];
   const actions: Action[] = [];
   for (const card of self.hand) {
-    if (!self.energyCreated && self.maxEnergy < s.rules.maxEnergy) actions.push({ type: 'createEnergy', cardUid: card.uid });
     actions.push(...playActions(s, card));
   }
   for (const u of self.board) {
@@ -267,7 +271,7 @@ export function getLegalActions(s: GameState): Action[] {
     }
     if (u.hiddenBy || (def.abilityEnabled && ['ceplus', 'lew'].includes(u.cardId) && u.enteredTurn === s.turn)) continue;
     if (u.stuns.length) continue;
-    if (def.kind !== 'unit' || u.attacksUsed > 0) continue;
+    if (def.kind !== 'unit' || u.cardId === 'koloseum' || u.attacksUsed > 0) continue;
     if (!s.rules.allowFirstTurnAttacks && owner === s.firstPlayer && self.turnsTaken === 1) continue;
     const baseAttack = getStats(s, owner, u).attack;
     if (enemy.board.length === 0 && baseAttack > 0) actions.push({ type: 'attack', attackerUid: u.uid, targetUid: playerTarget(enemyOwner) });
@@ -430,14 +434,13 @@ function sameAction(a: Action, b: Action): boolean {
   return keys.length === Object.keys(b).length && keys.every(k => a[k] === b[k]);
 }
 /** Mutates state in place for batch performance. Illegal moves are rejected before any mutation. */
-export function applyAction(s: GameState, action: Action): GameState {
-  const mulligan = !s.outcome && action.type === 'mulligan' && Object.keys(action).length === 2 && s.pendingMulligan[s.currentPlayer] &&
+export function applyAction(s: GameState, action: Action, owner: PlayerId = s.currentPlayer): GameState {
+  const mulligan = !s.outcome && action.type === 'mulligan' && Object.keys(action).length === 2 && s.pendingMulligan[owner] &&
     Array.isArray(action.cardUids) && action.cardUids.every(uid => typeof uid === 'string') &&
     new Set(action.cardUids).size === action.cardUids.length &&
-    action.cardUids.every(uid => s.players[s.currentPlayer].hand.some(card => card.uid === uid));
-  if (!mulligan && !getLegalActions(s).some(legal => sameAction(legal, action))) throw new Error(`Nielegalny ruch: ${JSON.stringify(action)}`);
+    action.cardUids.every(uid => s.players[owner].hand.some(card => card.uid === uid));
+  if (!mulligan && !getLegalActions(s, owner).some(legal => sameAction(legal, action))) throw new Error(`Nielegalny ruch: ${JSON.stringify(action)}`);
   if (action.type !== 'mulligan') s.actionsThisTurn++;
-  const owner = s.currentPlayer;
   const self = s.players[owner];
   switch (action.type) {
     case 'mulligan': {
@@ -451,17 +454,6 @@ export function applyAction(s: GameState, action: Action): GameState {
         if (s.pendingMulligan[other(owner)]) s.currentPlayer = other(owner);
         else { s.currentPlayer = s.firstPlayer; startTurn(s); }
       }
-      break;
-    }
-    case 'createEnergy': {
-      const idx = self.hand.findIndex(c => c.uid === action.cardUid);
-      const card = self.hand.splice(idx, 1)[0];
-      self.energyCards.push(card);
-      self.maxEnergy++;
-      self.energy++;
-      self.energyCreated = true;
-      s.metrics[owner][card.cardId].burned++;
-      event(s, { type: 'energy', player: owner, cardId: card.cardId, uid: card.uid });
       break;
     }
     case 'playCard': play(s, action); break;
@@ -494,21 +486,21 @@ export function applyAction(s: GameState, action: Action): GameState {
 export function observe(s: GameState, player: PlayerId = s.currentPlayer): PlayerObservation {
   const publicPlayer = (p: PlayerState): PublicPlayer => ({ hp: p.hp, energy: p.energy, maxEnergy: p.maxEnergy,
     handCount: p.hand.length, deckCount: p.deck.length, turnsTaken: p.turnsTaken,
-    board: p.board, discard: p.discard, energyCards: p.energyCards });
+    board: p.board, discard: p.discard });
   // Copy only allowed fields: no hidden cards, deck order, seed, metrics, or events.
   return structuredClone({ player, turn: s.turn, rules: s.rules, catalogs: s.catalogs,
-    self: { ...publicPlayer(s.players[player]), hand: s.players[player].hand, energyCreated: s.players[player].energyCreated, knownOpponentHand: s.players[player].knownOpponentHand },
+    self: { ...publicPlayer(s.players[player]), hand: s.players[player].hand, knownOpponentHand: s.players[player].knownOpponentHand },
     opponent: publicPlayer(s.players[other(player)]),
   });
 }
 /** Used by fuzz tests and optional simulation checks, not by the bot. */
 export function assertInvariants(s: GameState): void {
-  const all = s.players.flatMap(p => [...p.deck, ...p.hand, ...p.board, ...p.discard, ...p.energyCards]);
+  const all = s.players.flatMap(p => [...p.deck, ...p.hand, ...p.board, ...p.discard]);
   const expected = s.decks.flatMap((deck, owner) => DECKS[deck].flatMap(id => [0, 1, 2].map(copy => `p${owner}:${id}:${copy}`)));
   if (all.length !== 120 || new Set(all.map(c => c.uid)).size !== 120 || expected.some(uid => !all.some(c => c.uid === uid))) throw new Error('Zgubiona lub zduplikowana karta');
   for (const owner of [0, 1] as const) {
     const p = s.players[owner];
-    if (p.energy < 0 || p.energy > p.maxEnergy || p.maxEnergy > s.rules.maxEnergy || p.energyCards.length !== p.maxEnergy - s.rules.startingEnergy) throw new Error('Naruszenie energii');
+    if (p.energy < 0 || p.energy > p.maxEnergy || p.maxEnergy > s.rules.maxEnergy) throw new Error('Naruszenie energii');
     if (p.hp > s.rules.startingHp) throw new Error('Naruszenie limitu HP');
     for (const u of p.board) if (getStats(s, owner, u).health <= 0 || u.damage < 0 || u.attacksUsed > 1) throw new Error('Nieprawidłowy stan jednostki');
   }
